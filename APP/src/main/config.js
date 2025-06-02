@@ -29,7 +29,7 @@ const MAIN_WINDOW_CONFIG = {
 const DEFAULT_MQTT_CONFIG = {
   broker: 'mqtt://192.168.1.210:1883', // IP del ESP32 broker MQTT
   clientId: 'espbell_app_' + Math.random().toString(16).substr(2, 8),
-  subscribeTopics: ['espbell/commands']
+  subscribeTopics: ['casa/timbre'] // Topic para recibir alertas del timbre
 };
 
 module.exports = {

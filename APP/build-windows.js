@@ -12,11 +12,20 @@ builder.build({
       buildResources: "public"
     },
     win: {
-      target: 'portable',
-      artifactName: '${productName}-Portable-${version}.${ext}',
+      target: ['portable', 'nsis'],
+      artifactName: '${productName}-${version}.${ext}',
       rfc3161TimeStampServer: null,
       timeStampServer: null,
-      publisherName: false
+      publisherName: "EspBell",
+      shortcutName: "EspBell MQTT Client"
+    },
+    nsis: {
+      oneClick: true,
+      perMachine: true,
+      allowToChangeInstallationDirectory: false,
+      createDesktopShortcut: true,
+      createStartMenuShortcut: true,
+      runAfterFinish: true
     },
     files: [
       "**/*",

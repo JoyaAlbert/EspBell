@@ -14,7 +14,17 @@
   "win": {
     "target": ["portable", "nsis"],
     "artifactName": "${productName}-${version}.${ext}",
-    "icon": "public/icon.ico"
+    "icon": "public/icon.ico",
+    "publisherName": "EspBell",
+    "shortcutName": "EspBell MQTT Client"
+  },
+  "nsis": {
+    "oneClick": true,
+    "perMachine": true,
+    "allowToChangeInstallationDirectory": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "runAfterFinish": true
   },
   "electronVersion": "36.3.2",
   "files": [

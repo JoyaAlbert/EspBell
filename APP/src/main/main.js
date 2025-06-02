@@ -4,6 +4,9 @@ const path = require('path');
 const { MAIN_WINDOW_CONFIG, RENDERER_PATH } = require('./config');
 const mqttManager = require('./mqtt-manager');
 
+// Manejo del inicio automático en Windows
+if (require('electron-squirrel-startup')) app.quit();
+
 // Mantener una referencia global del objeto window
 // para evitar que la ventana se cierre automáticamente 
 // cuando el objeto JavaScript es basura recolectada.
@@ -18,43 +21,6 @@ function createWindow() {
 
   // Quitar la barra de menú
   mainWindow.setMenuBarVisibility(false);
-
-  // Crear un menú básico para todas las plataformas
-  const template = [
-    {
-      label: 'Archivo',
-      submenu: [
-        { role: 'quit', label: 'Salir' }
-      ]
-    },
-    {
-      label: 'Editar',
-      submenu: [
-        { role: 'undo', label: 'Deshacer' },
-        { role: 'redo', label: 'Rehacer' },
-        { type: 'separator' },
-        { role: 'cut', label: 'Cortar' },
-        { role: 'copy', label: 'Copiar' },
-        { role: 'paste', label: 'Pegar' },
-        { role: 'selectAll', label: 'Seleccionar todo' }
-      ]
-    },
-    {
-      label: 'Ver',
-      submenu: [
-        { role: 'reload', label: 'Recargar' },
-        { role: 'forceReload', label: 'Forzar recarga' },
-        { type: 'separator' },
-        { role: 'resetZoom', label: 'Restablecer zoom' },
-        { role: 'zoomIn', label: 'Acercar' },
-        { role: 'zoomOut', label: 'Alejar' },
-        { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Pantalla completa' }
-      ]
-    }
-  ];
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
   
   // Mostrar la ventana cuando el contenido está listo para evitar parpadeos
   mainWindow.once('ready-to-show', () => {
@@ -110,6 +76,29 @@ app.whenReady().then(() => {
         console.log('✅ Conectado al broker MQTT local (ESP32)');
         if (mainWindow) {
           mainWindow.webContents.send('mqtt-status', 'connected');
+          
+          // Suscribirse automáticamente al topic del timbre
+          mqttManager.subscribe('casa/timbre')
+            .then(subscribedTopic => {
+              console.log(`Suscrito a ${subscribedTopic}`);
+            })
+            .catch(err => {
+              console.error(`Error al suscribirse a casa/timbre:`, err);
+            });
+        }
+      });
+      
+      client.on('message', (topic, message) => {
+        if (mainWindow) {
+          mainWindow.webContents.send('mqtt-message', {
+            topic: topic,
+            message: message.toString()
+          });
+          
+          // Si el mensaje es del topic del timbre, enviar un evento especial
+          if (topic === 'casa/timbre') {
+            mainWindow.webContents.send('doorbell-alert', message.toString());
+          }
         }
       });
       
@@ -117,6 +106,18 @@ app.whenReady().then(() => {
         console.error('❌ Error al conectar al broker MQTT local:', err.message);
         if (mainWindow) {
           mainWindow.webContents.send('mqtt-status', 'error', err.message);
+        }
+      });
+      
+      client.on('reconnect', () => {
+        if (mainWindow) {
+          mainWindow.webContents.send('mqtt-status', 'reconnecting');
+        }
+      });
+      
+      client.on('close', () => {
+        if (mainWindow) {
+          mainWindow.webContents.send('mqtt-status', 'disconnected');
         }
       });
     } catch (error) {
@@ -136,51 +137,6 @@ app.on('activate', function () {
 });
 
 // Configurar manejadores de IPC para interactuar con el renderer
-ipcMain.on('mqtt-connect', (event, brokerInfo) => {
-  try {
-    const client = mqttManager.connect(brokerInfo);
-    
-    // Configurar manejadores de eventos para comunicación con el renderer
-    client.on('connect', () => {
-      if (mainWindow) {
-        mainWindow.webContents.send('mqtt-status', 'connected');
-      }
-    });
-    
-    client.on('message', (topic, message) => {
-      if (mainWindow) {
-        mainWindow.webContents.send('mqtt-message', {
-          topic: topic,
-          message: message.toString()
-        });
-      }
-    });
-    
-    client.on('error', (err) => {
-      if (mainWindow) {
-        mainWindow.webContents.send('mqtt-status', 'error', err.message);
-      }
-    });
-    
-    client.on('reconnect', () => {
-      if (mainWindow) {
-        mainWindow.webContents.send('mqtt-status', 'reconnecting');
-      }
-    });
-    
-    client.on('close', () => {
-      if (mainWindow) {
-        mainWindow.webContents.send('mqtt-status', 'disconnected');
-      }
-    });
-  } catch (error) {
-    console.error('Error al conectar al broker MQTT:', error);
-    if (mainWindow) {
-      mainWindow.webContents.send('mqtt-status', 'error', error.message);
-    }
-  }
-});
-
 ipcMain.on('mqtt-disconnect', () => {
   mqttManager.disconnect();
 });
@@ -205,22 +161,36 @@ ipcMain.on('mqtt-publish', (event, data) => {
   }
 });
 
-ipcMain.on('mqtt-subscribe', (event, topic) => {
-  try {
-    mqttManager.subscribe(topic)
-      .then(subscribedTopic => {
-        console.log(`Suscrito a ${subscribedTopic}`);
-      })
-      .catch(err => {
-        console.error(`Error al suscribirse a ${topic}:`, err);
-        if (mainWindow) {
-          mainWindow.webContents.send('mqtt-status', 'error', err.message);
-        }
-      });
-  } catch (error) {
-    console.error(`Error al suscribirse a ${topic}:`, error);
-    if (mainWindow) {
-      mainWindow.webContents.send('mqtt-status', 'error', error.message);
-    }
+// Manejador para cambiar el tema
+ipcMain.on('set-theme', (event, isDarkMode) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('theme-changed', { isDarkMode });
   }
 });
+
+// Configuración para inicio automático en Windows
+function setupAutoLaunch() {
+  // Solo configurar en Windows y cuando no es entorno de desarrollo
+  if (process.platform === 'win32' && !process.argv.includes('--dev')) {
+    const appFolder = path.dirname(process.execPath);
+    const updateExe = path.resolve(appFolder, '..', 'Update.exe');
+    const exeName = path.basename(process.execPath);
+    
+    const { spawn } = require('child_process');
+    
+    // Configura para ejecutar al inicio
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      path: updateExe,
+      args: [
+        '--processStart', `"${exeName}"`,
+        '--process-start-args', `"--hidden"`
+      ]
+    });
+    
+    console.log('Configuración de inicio automático aplicada');
+  }
+}
+
+// Ejecutar la configuración de inicio automático
+setupAutoLaunch();

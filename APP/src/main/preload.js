@@ -7,19 +7,19 @@ const { contextBridge, ipcRenderer } = require('electron');
 // Exponer una API protegida para que el renderizador pueda usar
 contextBridge.exposeInMainWorld('mqttAPI', {
   // Métodos para enviar mensajes al proceso principal
-  connect: (brokerInfo) => ipcRenderer.send('mqtt-connect', brokerInfo),
   disconnect: () => ipcRenderer.send('mqtt-disconnect'),
   publish: (data) => ipcRenderer.send('mqtt-publish', data),
-  subscribe: (topic) => ipcRenderer.send('mqtt-subscribe', topic),
   
   // Eventos que pueden ser escuchados por el renderizador
   onMessage: (callback) => ipcRenderer.on('mqtt-message', (event, data) => callback(data)),
   onStatusChange: (callback) => ipcRenderer.on('mqtt-status', (event, status, message) => callback(status, message)),
+  onDoorbellAlert: (callback) => ipcRenderer.on('doorbell-alert', (event, message) => callback(message)),
   
   // Limpiar los listeners al cerrar la ventana para evitar fugas de memoria
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('mqtt-message');
     ipcRenderer.removeAllListeners('mqtt-status');
+    ipcRenderer.removeAllListeners('doorbell-alert');
   }
 });
 
@@ -33,6 +33,9 @@ contextBridge.exposeInMainWorld('electronInfo', {
 contextBridge.exposeInMainWorld('themeAPI', {
   // Escuchar cambios de tema del sistema
   onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (event, themeData) => callback(themeData)),
+  
+  // Establecer tema manualmente
+  setTheme: (isDarkMode) => ipcRenderer.send('set-theme', isDarkMode),
   
   // Método para limpiar los listeners
   removeThemeListeners: () => {

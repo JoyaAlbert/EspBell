@@ -22,10 +22,7 @@
     "client",
     "espbell"
   ],
-  "author": {
-    "name": "EspBell",
-    "email": "ejemplo@espbell.com"
-  },
+  "author": "EspBell <ejemplo@espbell.com>",
   "license": "ISC",
   "description": "Cliente MQTT para recibir y enviar instrucciones a dispositivos IoT",
   "devDependencies": {
@@ -34,6 +31,11 @@
   },
   "dependencies": {
     "dotenv": "^16.5.0",
-    "mqtt": "^5.13.0"
+    "electron-squirrel-startup": "^1.0.1",
+    "mqtt": "^5.13.0",
+    "ws": "^8.18.2"
+  },
+  "directories": {
+    "doc": "docs"
   }
 }

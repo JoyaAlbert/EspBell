@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>EspBell MQTT</title>
+  <title>EspBell Timbre</title>
   <style>
     :root {
       /* Variables de color en estilo Apple - Tema Claro */
@@ -49,742 +49,580 @@
       color: var(--apple-text);
       margin: 0;
       padding: 30px;
-      overflow-x: hidden;
-      line-height: 1.47059;
-      font-weight: 400;
-      letter-spacing: -0.022em;
-      min-height: 100vh;
+      transition: var(--apple-transition);
+      height: 100vh;
       box-sizing: border-box;
-      transition: background-color 0.5s ease, color 0.5s ease;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background-color: var(--apple-panel-solid);
-      padding: 30px;
-      border-radius: var(--apple-radius);
-      box-shadow: 0 8px 32px var(--apple-shadow), 0 2px 8px var(--apple-shadow);
-      border: 1px solid var(--apple-border);
-      transition: var(--apple-transition);
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .theme-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .theme-label {
+      font-size: 14px;
+      color: var(--apple-text);
     }
     
     h1 {
-      color: var(--apple-text);
-      text-align: center;
-      margin-bottom: 24px;
+      font-size: 24px;
       font-weight: 600;
-      font-size: 32px;
-      letter-spacing: -0.03em;
+      margin: 0;
     }
     
-    h3 {
-      font-weight: 500;
-      font-size: 18px;
-      margin-top: 0;
-      margin-bottom: 16px;
-      letter-spacing: -0.02em;
+    /* Estilo para el interruptor de tema */
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
     }
     
-    .connection-status {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      padding: 16px 20px;
-      border-radius: var(--apple-radius);
-      background-color: var(--apple-panel-solid);
-      border: 1px solid var(--apple-border);
-      box-shadow: 0 2px 6px var(--apple-shadow);
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .theme-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--apple-inactive);
       transition: var(--apple-transition);
+      border-radius: 28px;
+    }
+    
+    .theme-slider:before {
+      position: absolute;
+      content: "";
+      height: 24px;
+      width: 24px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: var(--apple-transition);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px var(--apple-shadow-strong);
+    }
+    
+    input:checked + .theme-slider {
+      background-color: var(--apple-accent);
+    }
+    
+    input:checked + .theme-slider:before {
+      transform: translateX(24px);
+    }
+    
+    /* Estilos para las pestañas */
+    .tab-container {
+      margin-bottom: 20px;
+      width: 100%;
+      overflow-x: auto;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 2px;
+      background-color: var(--apple-inactive);
+      border-radius: var(--apple-radius);
+      padding: 4px;
+      width: fit-content;
+      min-width: 300px;
+    }
+    
+    .tab {
+      padding: 8px 16px;
+      border-radius: var(--apple-radius);
+      cursor: pointer;
+      transition: var(--apple-transition);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    
+    .tab.active {
+      background-color: var(--apple-panel-solid);
+      box-shadow: 0 2px 6px var(--apple-shadow);
+    }
+    
+    /* Contenido de las pestañas */
+    .tab-content {
+      display: none;
+      background-color: var(--apple-panel);
+      border-radius: var(--apple-radius);
+      padding: 24px;
+      box-shadow: 0 8px 16px var(--apple-shadow);
+      margin-top: 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Estilos para la sección de espera */
+    .waiting-section {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      max-height: 500px;
+      overflow: auto;
     }
     
     .status-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 10px;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-      transition: var(--apple-transition);
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: var(--apple-text-secondary);
     }
     
     .status-indicator.connected {
-      background-color: var(--apple-success);
-      box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+      color: var(--apple-success);
     }
     
-    .status-indicator.disconnected {
-      background-color: var(--apple-error);
-      box-shadow: 0 0 8px rgba(255, 59, 48, 0.5);
+    .status-indicator.error {
+      color: var(--apple-error);
     }
     
-    .status-indicator.reconnecting {
-      background-color: var(--apple-warning);
-      box-shadow: 0 0 8px rgba(255, 159, 10, 0.5);
+    .waiting-message {
+      font-size: 24px;
+      margin-bottom: 40px;
+    }
+    
+    .doorbell-icon {
+      width: 120px;
+      height: 120px;
+      fill: var(--apple-accent);
+      margin-bottom: 30px;
+      transition: var(--apple-transition);
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+      
+      .waiting-message {
+        font-size: 20px;
+        margin-bottom: 20px;
+      }
+      
+      .doorbell-icon {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+      }
+      
+      .tab {
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+      
+      .tab-content {
+        padding: 15px;
+      }
+    }
+    
+    /* Alerta del timbre */
+    .doorbell-alert {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 59, 48, 0.9);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
       animation: pulse 1.5s infinite;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .doorbell-alert h2 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    
+    .doorbell-alert p {
+      font-size: 24px;
+      margin-bottom: 40px;
+    }
+    
+    .dismiss-btn {
+      background-color: white;
+      color: #ff3b30;
+      border: none;
+      padding: 12px 30px;
+      font-size: 18px;
+      border-radius: var(--apple-radius-button);
+      cursor: pointer;
+      font-weight: bold;
+      transition: var(--apple-transition);
+    }
+    
+    .dismiss-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
     
     @keyframes pulse {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.2); opacity: 0.8; }
-      100% { transform: scale(1); opacity: 1; }
+      0% {
+        background-color: rgba(255, 59, 48, 0.7);
+      }
+      50% {
+        background-color: rgba(255, 59, 48, 0.9);
+      }
+      100% {
+        background-color: rgba(255, 59, 48, 0.7);
+      }
     }
     
-    .broker-config {
-      margin-bottom: 24px;
-      padding: 24px;
-      border-radius: var(--apple-radius);
-      background-color: var(--apple-panel-solid);
-      border: 1px solid var(--apple-border);
-      box-shadow: 0 2px 6px var(--apple-shadow);
-      transition: var(--apple-transition);
+    @media (max-width: 600px) {
+      .doorbell-alert h2 {
+        font-size: 36px;
+        margin-bottom: 15px;
+      }
+      
+      .doorbell-alert p {
+        font-size: 18px;
+        margin-bottom: 30px;
+      }
+      
+      .dismiss-btn {
+        padding: 10px 24px;
+        font-size: 16px;
+      }
     }
     
-    .broker-config:hover, .publish-container:hover, .connection-status:hover {
-      box-shadow: 0 4px 12px var(--apple-shadow-strong);
-      transform: translateY(-2px);
+    /* Formulario de publicación */
+    .publish-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 100%;
     }
     
     .form-group {
-      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     
     label {
-      display: block;
-      margin-bottom: 8px;
       font-weight: 500;
       color: var(--apple-text);
-      font-size: 14px;
     }
     
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px 16px;
+    input[type="text"], textarea {
+      padding: 12px;
+      border-radius: var(--apple-radius);
       border: 1px solid var(--apple-border);
-      border-radius: 8px;
-      box-sizing: border-box;
-      font-size: 15px;
-      transition: var(--apple-transition);
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
       background-color: var(--apple-panel-solid);
+      color: var(--apple-text);
+      font-size: 16px;
+      transition: var(--apple-transition);
+      width: 100%;
+      box-sizing: border-box;
     }
     
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-      border-color: var(--apple-accent);
+    input[type="text"]:focus, textarea:focus {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.25);
+      border-color: var(--apple-accent);
+      box-shadow: 0 0 0 2px var(--apple-accent-light);
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 100px;
     }
     
     button {
       background-color: var(--apple-accent);
       color: white;
       border: none;
-      padding: 12px 24px;
+      padding: 12px;
       border-radius: var(--apple-radius-button);
-      cursor: pointer;
-      font-size: 15px;
       font-weight: 500;
+      font-size: 16px;
+      cursor: pointer;
       transition: var(--apple-transition);
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      letter-spacing: -0.01em;
-      box-shadow: 0 2px 6px rgba(0, 113, 227, 0.3);
+      max-width: 100%;
     }
     
     button:hover {
       background-color: var(--apple-accent-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4);
     }
     
-    button:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 3px rgba(0, 113, 227, 0.2);
-    }
-    
-    button:disabled {
-      background-color: var(--apple-inactive);
-      color: var(--apple-text-secondary);
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
-    
-    .secondary-button {
-      background-color: transparent;
-      color: var(--apple-accent);
-      border: 1px solid var(--apple-accent);
-      box-shadow: none;
-    }
-    
-    .secondary-button:hover {
-      background-color: var(--apple-accent-light);
-      box-shadow: none;
-    }
-    
-    .danger-button {
-      background-color: var(--apple-error);
-      box-shadow: 0 2px 6px rgba(255, 59, 48, 0.3);
-    }
-    
-    .danger-button:hover {
-      background-color: #ff514a;
-      box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
-    }
-    
-    .messages-container {
-      margin-top: 24px;
-    }
-    
-    .message-list {
-      height: 250px;
-      overflow-y: auto;
-      border: 1px solid var(--apple-border);
-      border-radius: var(--apple-radius);
-      padding: 16px;
-      margin-bottom: 20px;
-      background-color: var(--apple-panel-solid);
-      box-shadow: inset 0 1px 3px var(--apple-shadow);
-    }
-    
-    .message-item {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--apple-border);
-      font-size: 14px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      transition: var(--apple-transition);
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-    
-    .message-item:hover {
-      background-color: rgba(0, 0, 0, 0.02);
-    }
-    
-    .message-item:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-    }
-    
-    .message-item .topic {
-      font-weight: 600;
-      color: var(--apple-text);
-    }
-    
-    .message-item .timestamp {
-      color: var(--apple-text-secondary);
-      font-size: 12px;
-      margin-left: 10px;
-    }
-    
-    .publish-container {
-      margin-top: 24px;
-      padding: 24px;
-      border-radius: var(--apple-radius);
-      background-color: var(--apple-panel-solid);
-      border: 1px solid var(--apple-border);
-      box-shadow: 0 2px 6px var(--apple-shadow);
-      transition: var(--apple-transition);
-    }
-    
-    .tabs {
-      display: flex;
-      margin-bottom: 24px;
-      border-bottom: 1px solid var(--apple-border);
-      gap: 4px;
-      position: relative;
-    }
-    
-    .tab {
-      padding: 12px 24px;
-      cursor: pointer;
-      font-size: 15px;
+    .success-message {
+      color: var(--apple-success);
+      margin-top: 16px;
       font-weight: 500;
-      color: var(--apple-text-secondary);
-      transition: var(--apple-transition);
-      position: relative;
-      z-index: 1;
-      border-radius: 8px 8px 0 0;
-    }
-    
-    .tab:hover {
-      color: var(--apple-accent);
-    }
-    
-    .tab.active {
-      color: var(--apple-accent);
-      font-weight: 600;
-    }
-    
-    .tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 10%;
-      width: 80%;
-      height: 2px;
-      background-color: var(--apple-accent);
-      border-radius: 1px;
-      transition: var(--apple-transition);
-    }
-    
-    .tab-content {
       display: none;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: var(--apple-transition);
     }
     
-    .tab-content.active {
+    /* Mostrar contenido de la pestaña activa */
+    #waiting-tab-content {
       display: block;
-      opacity: 1;
-      transform: translateY(0);
-      animation: fadeIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-    }
-    
-    .footer {
-      margin-top: 30px;
-      text-align: center;
-      font-size: 13px;
-      color: var(--apple-text-secondary);
-      padding-top: 20px;
-      border-top: 1px solid var(--apple-border);
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* Inputs group con botón al lado */
-    .input-group {
-      display: flex;
-      gap: 12px;
-    }
-    
-    .input-group input {
-      flex: 1;
-    }
-    
-    /* Personalización de la barra de desplazamiento */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: transparent;
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--apple-border);
-      border-radius: 4px;
-      border: 2px solid var(--apple-panel-solid);
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--apple-text-secondary);
-    }
-
-    /* Notificación flotante */
-    .notification {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 16px;
-      background-color: var(--apple-panel-solid);
-      border-radius: var(--apple-radius);
-      box-shadow: 0 4px 16px var(--apple-shadow-strong);
-      border: 1px solid var(--apple-border);
-      display: flex;
-      align-items: center;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-      z-index: 100;
-    }
-
-    .notification.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .notification.success {
-      border-left: 4px solid var(--apple-success);
-    }
-
-    .notification.error {
-      border-left: 4px solid var(--apple-error);
-    }
-
-    .notification .message {
-      margin-left: 8px;
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .version-info {
-      display: inline-flex;
-      align-items: center;
-      font-size: 12px;
-      color: var(--apple-text-secondary);
-      background-color: var(--apple-panel-solid);
-      padding: 4px 10px;
-      border-radius: 16px;
-      margin: 0 auto;
-      box-shadow: 0 1px 3px var(--apple-shadow);
-    }
-
-    /* Animación para la carga de la página */
-    @keyframes appearFromBottom {
-      from { transform: translateY(30px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .container {
-      animation: appearFromBottom 0.8s cubic-bezier(0.19, 1, 0.22, 1);
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>EspBell MQTT Client</h1>
-    <div class="version-info">
-      <span id="version-number"></span> • <span id="platform-name"></span>
+  <header>
+    <h1>EspBell Timbre</h1>
+    <div class="theme-control">
+      <span class="theme-label">Tema Oscuro</span>
+      <label class="theme-switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="theme-slider"></span>
+      </label>
     </div>
-    
+  </header>
+  
+  <div class="tab-container">
     <div class="tabs">
-      <div class="tab active" data-tab="connection">Conexión</div>
-      <div class="tab" data-tab="messages">Mensajes</div>
-      <div class="tab" data-tab="publish">Publicar</div>
+      <div class="tab active" data-tab="waiting">Esperando Timbre</div>
+      <div class="tab" data-tab="publish">Enviar Mensaje</div>
     </div>
-    
-    <div class="tab-content active" id="connection-tab">
-      <div class="connection-status">
-        <div>
-          <span class="status-indicator disconnected" id="status-indicator"></span>
-          <span id="connection-status">Desconectado</span>
-        </div>
-        <div>
-          <button id="disconnect-btn" class="danger-button" disabled>Desconectar</button>
-        </div>
+  </div>
+  
+  <div id="waiting-tab-content" class="tab-content active">
+    <div class="waiting-section">
+      <div class="status-indicator" id="mqtt-status">Conectando al servidor...</div>
+      
+      <svg class="doorbell-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M10,21H14A2,2 0 0,1 12,23A2,2 0 0,1 10,21M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M17,11A5,5 0 0,0 12,6A5,5 0 0,0 7,11V18H17V11M19.75,3.19L18.33,4.61C20.04,6.3 21,8.6 21,11H23C23,8.07 21.84,5.25 19.75,3.19M1,11H3C3,8.6 3.96,6.3 5.67,4.61L4.25,3.19C2.16,5.25 1,8.07 1,11Z"/>
+      </svg>
+      
+      <div class="waiting-message">
+        Esperando que alguien toque el timbre...
+      </div>
+    </div>
+  </div>
+  
+  <div id="publish-tab-content" class="tab-content">
+    <div class="publish-form">
+      <div class="form-group">
+        <label for="topic-input">Tema (Topic)</label>
+        <input type="text" id="topic-input" value="casa/timbre" placeholder="Ingrese el tema MQTT">
       </div>
       
-      <div class="broker-config">
-        <h3>Configuración del Broker</h3>
-        <div class="form-group">
-          <label for="broker-url">URL del Broker:</label>
-          <input type="text" id="broker-url" placeholder="mqtt://broker.emqx.io:1883" value="mqtt://broker.emqx.io:1883">
-        </div>
-        <div class="form-group">
-          <label for="broker-username">Usuario (opcional):</label>
-          <input type="text" id="broker-username" placeholder="Usuario">
-        </div>
-        <div class="form-group">
-          <label for="broker-password">Contraseña (opcional):</label>
-          <input type="password" id="broker-password" placeholder="Contraseña">
-        </div>
-        <button id="connect-btn">Conectar</button>
+      <div class="form-group">
+        <label for="message-input">Mensaje</label>
+        <textarea id="message-input" placeholder="Ingrese el mensaje a publicar"></textarea>
       </div>
-    </div>
-    
-    <div class="tab-content" id="messages-tab">
-      <div class="messages-container">
-        <h3>Mensajes Recibidos</h3>
-        <div class="form-group">
-          <label for="subscription-topic">Tema de suscripción:</label>
-          <div class="input-group">
-            <input type="text" id="subscription-topic" placeholder="espbell/commands" value="espbell/commands">
-            <button id="subscribe-btn">Suscribir</button>
-          </div>
-        </div>
-        <div class="message-list" id="message-list">
-          <!-- Los mensajes se agregarán aquí dinámicamente -->
-        </div>
-        <button id="clear-messages-btn" class="secondary-button">Limpiar Mensajes</button>
+      
+      <button id="publish-btn">Publicar Mensaje</button>
+      
+      <div id="publish-success" class="success-message">
+        ¡Mensaje publicado exitosamente!
       </div>
-    </div>
-    
-    <div class="tab-content" id="publish-tab">
-      <div class="publish-container">
-        <h3>Publicar Mensaje</h3>
-        <div class="form-group">
-          <label for="publish-topic">Tema:</label>
-          <input type="text" id="publish-topic" placeholder="espbell/response">
-        </div>
-        <div class="form-group">
-          <label for="publish-message">Mensaje:</label>
-          <input type="text" id="publish-message" placeholder="Mensaje a publicar">
-        </div>
-        <button id="publish-btn">Publicar</button>
-      </div>
-    </div>
-    
-    <div class="footer">
-      © 2025 EspBell MQTT Client • Desarrollado con Electron
     </div>
   </div>
-
-  <!-- Notificación flotante -->
-  <div class="notification" id="notification">
-    <span id="notification-message" class="message"></span>
+  
+  <div class="doorbell-alert" id="doorbell-alert">
+    <h2>¡TIMBRE!</h2>
+    <p id="doorbell-message">Alguien está en la puerta</p>
+    <button class="dismiss-btn" id="dismiss-btn">ENTENDIDO</button>
   </div>
-
+  
   <script>
-    // Referencias a elementos DOM
-    const statusIndicator = document.getElementById('status-indicator');
-    const connectionStatus = document.getElementById('connection-status');
-    const connectBtn = document.getElementById('connect-btn');
-    const disconnectBtn = document.getElementById('disconnect-btn');
-    const brokerUrl = document.getElementById('broker-url');
-    const brokerUsername = document.getElementById('broker-username');
-    const brokerPassword = document.getElementById('broker-password');
-    const messageList = document.getElementById('message-list');
-    const subscriptionTopic = document.getElementById('subscription-topic');
-    const subscribeBtn = document.getElementById('subscribe-btn');
-    const clearMessagesBtn = document.getElementById('clear-messages-btn');
-    const publishTopic = document.getElementById('publish-topic');
-    const publishMessage = document.getElementById('publish-message');
-    const publishBtn = document.getElementById('publish-btn');
+    // DOM Elements
+    const themeToggle = document.getElementById('theme-toggle');
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
-    const versionNumber = document.getElementById('version-number');
-    const platformName = document.getElementById('platform-name');
-    const notification = document.getElementById('notification');
-    const notificationMessage = document.getElementById('notification-message');
+    const mqttStatus = document.getElementById('mqtt-status');
+    const publishBtn = document.getElementById('publish-btn');
+    const topicInput = document.getElementById('topic-input');
+    const messageInput = document.getElementById('message-input');
+    const publishSuccess = document.getElementById('publish-success');
+    const doorbellAlert = document.getElementById('doorbell-alert');
+    const doorbellMessage = document.getElementById('doorbell-message');
+    const dismissBtn = document.getElementById('dismiss-btn');
     
-    // Detector de tema oscuro/claro
-    function applyTheme(isDarkMode) {
-      if (isDarkMode) {
-        document.body.classList.add('dark-theme');
-        showNotification('Modo oscuro activado', 'success');
-      } else {
-        document.body.classList.remove('dark-theme');
-        showNotification('Modo claro activado', 'success');
-      }
-    }
-    
-    // Escuchar cambios de tema del sistema
-    if (window.themeAPI) {
-      window.themeAPI.onThemeChanged((themeData) => {
-        applyTheme(themeData.isDarkMode);
-      });
-    }
-    
-    // Detectar preferencia inicial de tema oscuro
+    // Check system dark mode preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      applyTheme(true);
+      document.body.classList.add('dark-theme');
+      themeToggle.checked = true;
     }
     
-    // Escuchar cambios de tema en el navegador
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      applyTheme(e.matches);
+    // Event Listeners
+    themeToggle.addEventListener('change', () => {
+      document.body.classList.toggle('dark-theme');
+      window.themeAPI.setTheme(themeToggle.checked);
     });
     
-    // Mostrar información de la aplicación
-    if (window.electronInfo) {
-      versionNumber.textContent = 'v' + window.electronInfo.appVersion;
-      
-      // Convertir el nombre de la plataforma a un formato más amigable
-      let platform = window.electronInfo.platform;
-      if (platform === 'win32') {
-        platformName.textContent = 'Windows';
-      } else if (platform === 'linux') {
-        platformName.textContent = 'Linux';
-      } else {
-        platformName.textContent = platform;
-      }
-    }
-    
-    // Función para mostrar notificaciones
-    function showNotification(message, type = 'success') {
-      notification.classList.remove('success', 'error');
-      notification.classList.add(type);
-      notificationMessage.textContent = message;
-      notification.classList.add('show');
-      
-      // Ocultar después de 3 segundos
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 3000);
-    }
-    
-    // Funcionalidad de las pestañas
+    // Tab switching
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        const tabName = tab.getAttribute('data-tab');
-        
-        // Cambiar la pestaña activa
+        // Remove active class from all tabs and contents
         tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+        tabContents.forEach(content => content.classList.remove('active'));
         
-        // Mostrar el contenido de la pestaña activa
-        tabContents.forEach(content => {
-          content.classList.remove('active');
-          if (content.id === `${tabName}-tab`) {
-            setTimeout(() => {
-              content.classList.add('active');
-            }, 50);
-          }
-        });
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
+        const tabId = `${tab.dataset.tab}-tab-content`;
+        document.getElementById(tabId).classList.add('active');
       });
     });
     
-    // Manejar eventos de conexión MQTT
-    connectBtn.addEventListener('click', () => {
-      const url = brokerUrl.value.trim();
-      const username = brokerUsername.value.trim();
-      const password = brokerPassword.value.trim();
+    // MQTT Status Listener
+    window.mqttAPI.onStatusChange((status, message) => {
+      mqttStatus.className = 'status-indicator';
       
-      if (!url) {
-        showNotification('Por favor, ingresa la URL del broker', 'error');
-        return;
+      switch (status) {
+        case 'connected':
+          mqttStatus.textContent = 'Conectado al servidor';
+          mqttStatus.classList.add('connected');
+          break;
+        case 'disconnected':
+          mqttStatus.textContent = 'Desconectado del servidor';
+          break;
+        case 'reconnecting':
+          mqttStatus.textContent = 'Reconectando...';
+          break;
+        case 'error':
+          mqttStatus.textContent = `Error: ${message || 'Desconocido'}`;
+          mqttStatus.classList.add('error');
+          break;
+        default:
+          mqttStatus.textContent = 'Estado desconocido';
       }
-      
-      // Enviar petición de conexión al proceso principal
-      window.mqttAPI.connect({
-        url,
-        username: username || undefined,
-        password: password || undefined
-      });
-      
-      updateStatus('reconnecting', 'Conectando...');
     });
     
-    disconnectBtn.addEventListener('click', () => {
-      window.mqttAPI.disconnect();
-    });
-    
-    // Manejar suscripciones
-    subscribeBtn.addEventListener('click', () => {
-      const topic = subscriptionTopic.value.trim();
-      
-      if (!topic) {
-        showNotification('Por favor, ingresa un tema para suscribirte', 'error');
-        return;
-      }
-      
-      window.mqttAPI.subscribe(topic);
-      addMessage('Sistema', `Suscrito al tema: ${topic}`);
-      showNotification(`Suscrito a: ${topic}`);
-    });
-    
-    // Manejar publicación de mensajes
+    // Publish Button Click
     publishBtn.addEventListener('click', () => {
-      const topic = publishTopic.value.trim();
-      const message = publishMessage.value.trim();
+      const topic = topicInput.value.trim();
+      const message = messageInput.value.trim();
       
       if (!topic || !message) {
-        showNotification('Por favor, ingresa un tema y un mensaje', 'error');
+        alert('Por favor ingrese tanto el tema como el mensaje');
         return;
       }
       
       window.mqttAPI.publish({
-        topic,
-        message
+        topic: topic,
+        message: message
       });
       
-      addMessage('Publicado', `${topic}: ${message}`);
-      showNotification(`Mensaje publicado en: ${topic}`);
-      publishMessage.value = '';
+      // Show success message and hide after 3 seconds
+      publishSuccess.style.display = 'block';
+      setTimeout(() => {
+        publishSuccess.style.display = 'none';
+      }, 3000);
+      
+      // Clear message input
+      messageInput.value = '';
     });
     
-    // Limpiar mensajes
-    clearMessagesBtn.addEventListener('click', () => {
-      messageList.innerHTML = '';
-      showNotification('Mensajes borrados');
+    // Doorbell Alert Listener
+    window.mqttAPI.onDoorbellAlert((message) => {
+      // Detener cualquier sonido previo y reiniciar
+      stopAlertSound();
+      
+      // Show the alert
+      doorbellAlert.style.display = 'flex';
+      
+      // Set message if available
+      if (message && message !== 'on' && message !== '1') {
+        doorbellMessage.textContent = message;
+      } else {
+        doorbellMessage.textContent = 'Alguien está en la puerta';
+      }
+      
+      // Play notification sound
+      playAlertSound();
     });
     
-    // Escuchar mensajes MQTT desde el proceso principal
+    // Dismiss button
+    dismissBtn.addEventListener('click', () => {
+      doorbellAlert.style.display = 'none';
+      stopAlertSound();
+    });
+    
+    // Function to play alert sound
+    let alertAudio;
+    
+    function playAlertSound() {
+      // Crear un nuevo objeto de audio si no existe
+      if (!alertAudio) {
+        alertAudio = new Audio('data:audio/wav;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRDiMcCBcH3Cc+CDv/7xA4Tvh9Rz/y8QADBwMWgQAZG/ILNAARQ4GLTcDeIIIhxGOBAuD7hOfBB3/94gcJ3w+o5/5eIAIAAAVwWgQAVQ2ORaIQwEMAJiDg95G4nQL7mQVWI6GwRcfsZAcsKkJvxgxEjzFUgfHoSQ9Qq7KNwqHwuB13MA4a1q/DmBrHgPcmjiGoh//EwC5nGPEmS4RcfkVKOhJf+WOgoxJclFz3kgn//dBA+ya1GhurNn8zb//9NNutNuhz31f////9vt///z+IdAEAAAK4LQIAKobHItEIYCGAExBwe8jcToF9zIKrEdDYIuP2MgOWFSE34wYiR5iqQPj0JIeoVdlG4VD4XA67mAcNa1fhzA1jwHuTRxDUQ//iYBczjHiTJcIuPyKlHQkv/LHQUYkuSi57yQT//uggfZNajQ3Vmz+Zt//+mm3Wm3Q576v////+32///5/EOgAAADVghQAAAAA//uQZAUAB1WI0PZugAAAAAoQwAAAEk3nRd2qAAAAACiDgAAAAAAABCqEEQRLCgwpBGMlJkIz8jKhGvj4k6jzRnqasNKIeoh5gI7BJaC1A1AoNBjJgbyApVS4IDlZgDU5WUAxEKDNmmALHzZp0Fkz1FMTmGFl1FMEyodIavcCAUHDWrKAIA4aa2oCgILEBupZgHvAhEBcZ6joQBxS76AgccrFlczBvKLC0QI2cBoCFvfTDAo7eoOQInqDPBtvrDEZBNYN5xwNwxQRfw8ZQ5wQVLvO8OYU+mHvFLlDh05Mdg7BT6YrRPpCBznMB2r//xKJjyyOh+cImr2/4doscwD6neZjuZR4AgAABYAAAABy1xcdQtxYBYYZdifkUDgzzXaXn98Z0oi9ILU5mBjFANmRwlVJ3/6jYDAmxaiDG3/6xjQQCCKkRb/6kg/wW+kSJ5//rLobkLSiKmqP/0ikJuDaSaSf/6JiLYLEYnW/+kXg1WRVJL/9EmQ1YZIsv/6Qzwy5qk7/+tEU0nkls3/zIUMPKNX/6yZLf+kFgAfgGyLFAUwY//uQZAUABcd5UiNPVXAAAApAAAAAE0VZQKw9ISAAACgAAAAAVQIygIElVrFkBS+Jhi+EAuu+lKAkYUEIsmEAEoMeDmCETMvfSHTGkF5RWH7kz/ESHWPAq/kcCRhqBtMdokPdM7vil7RG98A2sc7zO6ZvTdM7pmOUAZTnJW+NXxqmd41dqJ6mLTXxrPpnV8avaIf5SvL7pndPvPpndJR9Kuu8fePvuiuhorgWjp7Mf/PRjxcFCPDkW31srioCExivv9lcwKEaHsf/7ow2Fl1T/9RkXgEhYElAoCLFtMArxwivDJJ+bR1HTKJdlEoTELCIqgEwVGSQ+hIm0NbK8WXcTEI0UPoa2NbG4y2K00JEWbZavJXkYaqo9CRHS55FcZTjKEk3NKoCYUnSQ0rWxrZbFKbKIhOKPZe1cJKzZSaQrIyULHDZmV5K4xySsDRKWOruanGtjLJXFEmwaIbDLX0hIPBUQPVFVkQkDoUNfSoDgQGKPekoxeGzA4DUvnn4bxzcZrtJyipKfPNy5w+9lnXwgqsiyHNeSVpemw4bWb9psYeq//uQZBoABQt4yMVxYAIAAAkQoAAAHvYpL5m6AAgAACXDAAAAD59jblTirQe9upFsmZbpMudy7Lz1X1DYsxOOSWpfPqNX2WqktK0DMvuGwlbNj44TleLPQ+Gsfb+GOWOKJoIrWb3cIMeeON6lz2umTqMXV8Mj30yWPpjoSa9ujK8SyeJP5y5mOW1D6hvLepeveEAEDo0mgCRClOEgANv3B9a6fikgUSu/DmAMATrGx7nng5p5iimPNZsfQLYB2sDLIkzRKZOHGAaUyDcpFBSLG9MCQALgAIgQs2YunOszLSAyQYPVC2YdGGeHD2dTdJk1pAHGAWDjnkcLKFymS3RQZTInzySoBwMG0QueC3gMsCEYxUqlrcxK6k1LQQcsmyYeQPdC2YfuGPASCBkcVMQQqpVJshui1tkXQJQV0OXGAZMXSOEEBRirXbVRQW7ugq7IM7rPWSZyDlM3IuNEkxzCOJ0ny2ThNkyRai1b6ev//3dzNGzNb//4uAvHT5sURcZCFcuKLhOFs8mLAAEAt4UWAAIABAAAAAB4qbHo0tIjVkUU//uQZAwABfSFz3ZqQAAAAAngwAAAE1HjMp2qAAAAACZDgAAAD5UkTE1UgZEUExqYynN1qZvqIOREEFmBcJQkwdxiFtw0qEOkGYfRDifBui9MQg4QAHAqWtAWHoCxu1Yf4VfWLPIM2mHDFsbQEVGwyqQoQcwnfHeIkNt9YnkiaS1oizycqJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=');
+      }
+      
+      // Configurar para reproducción en bucle
+      alertAudio.loop = true;
+      
+      // Reproducir el sonido
+      alertAudio.play();
+    }
+    
+    function stopAlertSound() {
+      if (alertAudio) {
+        alertAudio.pause();
+        alertAudio.currentTime = 0;
+      }
+    }
+    
+    // También escuchar mensajes en el topic casa/timbre
     window.mqttAPI.onMessage((data) => {
-      addMessage(data.topic, data.message);
-    });
-    
-    // Escuchar cambios de estado MQTT
-    window.mqttAPI.onStatusChange((status, message) => {
-      updateStatus(status, message);
-      
-      // Mostrar notificaciones según el estado
-      if (status === 'connected') {
-        showNotification('Conectado al broker MQTT');
-      } else if (status === 'disconnected') {
-        showNotification('Desconectado del broker MQTT', 'error');
-      } else if (status === 'error') {
-        showNotification(message || 'Error de conexión', 'error');
+      if (data.topic === 'casa/timbre') {
+        // Detener cualquier sonido previo y reiniciar
+        stopAlertSound();
+        
+        // Show the alert
+        doorbellAlert.style.display = 'flex';
+        
+        // Set message if available
+        if (data.message && data.message !== 'on' && data.message !== '1') {
+          doorbellMessage.textContent = data.message;
+        } else {
+          doorbellMessage.textContent = 'Alguien está en la puerta';
+        }
+        
+        // Play notification sound
+        playAlertSound();
       }
     });
     
-    // Función para actualizar el indicador de estado
-    function updateStatus(status, message) {
-      statusIndicator.className = 'status-indicator';
-      
-      switch (status) {
-        case 'connected':
-          statusIndicator.classList.add('connected');
-          connectionStatus.textContent = 'Conectado';
-          connectBtn.disabled = true;
-          disconnectBtn.disabled = false;
-          break;
-        case 'disconnected':
-          statusIndicator.classList.add('disconnected');
-          connectionStatus.textContent = 'Desconectado';
-          connectBtn.disabled = false;
-          disconnectBtn.disabled = true;
-          break;
-        case 'reconnecting':
-          statusIndicator.classList.add('reconnecting');
-          connectionStatus.textContent = message || 'Reconectando...';
-          connectBtn.disabled = true;
-          disconnectBtn.disabled = false;
-          break;
-        case 'error':
-          statusIndicator.classList.add('disconnected');
-          connectionStatus.textContent = message || 'Error de conexión';
-          connectBtn.disabled = false;
-          disconnectBtn.disabled = true;
-          break;
+    // Listen for theme changes from the main process
+    window.themeAPI.onThemeChanged((themeData) => {
+      if (themeData.isDarkMode) {
+        document.body.classList.add('dark-theme');
+        themeToggle.checked = true;
+      } else {
+        document.body.classList.remove('dark-theme');
+        themeToggle.checked = false;
       }
-    }
+    });
     
-    // Función para agregar un mensaje a la lista
-    function addMessage(topic, message) {
-      const messageItem = document.createElement('div');
-      messageItem.className = 'message-item';
-      
-      const now = new Date();
-      const timeString = now.toLocaleTimeString();
-      
-      messageItem.innerHTML = `
-        <span class="topic">${topic}:</span> ${message}
-        <span class="timestamp">${timeString}</span>
-      `;
-      
-      messageList.appendChild(messageItem);
-      
-      // Auto-scroll al final
-      messageList.scrollTop = messageList.scrollHeight;
-    }
-    
-    // Inicializar el estado
-    updateStatus('disconnected');
-    
-    // Agregar mensaje inicial
-    addMessage('Sistema', 'Cliente MQTT iniciado. Conecta a un broker para comenzar.');
-    
-    // Limpiar listeners al cerrar la ventana
+    // Cleanup listeners when window unloads
     window.addEventListener('beforeunload', () => {
-      if (window.mqttAPI && window.mqttAPI.removeAllListeners) {
-        window.mqttAPI.removeAllListeners();
-      }
+      window.mqttAPI.removeAllListeners();
+      window.themeAPI.removeThemeListeners();
     });
   </script>
 </body>
