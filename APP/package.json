@@ -1,0 +1,39 @@
+{
+  "name": "espbell",
+  "version": "1.0.0",
+  "main": "src/main/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx electron .",
+    "dev": "npx electron . --dev",
+    "build": "electron-builder --config electron-builder.json",
+    "build:win": "electron-builder --win --config electron-builder.json",
+    "build:linux": "electron-builder --linux --config electron-builder.json",
+    "build:portable": "electron-builder --win portable --config electron-builder.json",
+    "build:all": "electron-builder -wl --config electron-builder.json",
+    "build:win:simple": "node build-windows.js",
+    "build:quick": "./scripts/build-win-linux.sh",
+    "clean": "./scripts/clean.sh"
+  },
+  "keywords": [
+    "electron",
+    "mqtt",
+    "iot",
+    "client",
+    "espbell"
+  ],
+  "author": {
+    "name": "EspBell",
+    "email": "ejemplo@espbell.com"
+  },
+  "license": "ISC",
+  "description": "Cliente MQTT para recibir y enviar instrucciones a dispositivos IoT",
+  "devDependencies": {
+    "electron": "^36.3.2",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "mqtt": "^5.13.0"
+  }
+}
