@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>EspBell MQTT</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .connection-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f8f8f8;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background-color: #ccc;
+    }
+    
+    .status-indicator.connected {
+      background-color: #4CAF50;
+    }
+    
+    .status-indicator.disconnected {
+      background-color: #F44336;
+    }
+    
+    .status-indicator.reconnecting {
+      background-color: #FFC107;
+    }
+    
+    .broker-config {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    button {
+      background-color: #2c3e50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #1a252f;
+    }
+    
+    .messages-container {
+      margin-top: 20px;
+    }
+    
+    .message-list {
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+    }
+    
+    .message-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    
+    .message-item .topic {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    .message-item .timestamp {
+      color: #999;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    
+    .publish-container {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      margin-right: 5px;
+      border-radius: 4px 4px 0 0;
+    }
+    
+    .tab.active {
+      background-color: #fff;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -1px;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>EspBell MQTT Client</h1>
+    <p id="app-version" class="footer">Versión: <span id="version-number"></span> (<span id="platform-name"></span>)</p>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="connection">Conexión</div>
+      <div class="tab" data-tab="messages">Mensajes</div>
+      <div class="tab" data-tab="publish">Publicar</div>
+    </div>
+    
+    <div class="tab-content active" id="connection-tab">
+      <div class="connection-status">
+        <div>
+          <span class="status-indicator disconnected" id="status-indicator"></span>
+          <span id="connection-status">Desconectado</span>
+        </div>
+        <div>
+          <button id="disconnect-btn" disabled>Desconectar</button>
+        </div>
+      </div>
+      
+      <div class="broker-config">
+        <h3>Configuración del Broker</h3>
+        <div class="form-group">
+          <label for="broker-url">URL del Broker:</label>
+          <input type="text" id="broker-url" placeholder="mqtt://broker.emqx.io:1883" value="mqtt://broker.emqx.io:1883">
+        </div>
+        <div class="form-group">
+          <label for="broker-username">Usuario (opcional):</label>
+          <input type="text" id="broker-username" placeholder="Usuario">
+        </div>
+        <div class="form-group">
+          <label for="broker-password">Contraseña (opcional):</label>
+          <input type="password" id="broker-password" placeholder="Contraseña">
+        </div>
+        <button id="connect-btn">Conectar</button>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="messages-tab">
+      <div class="messages-container">
+        <h3>Mensajes Recibidos</h3>
+        <div class="form-group">
+          <label for="subscription-topic">Tema de suscripción:</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="subscription-topic" placeholder="espbell/commands" value="espbell/commands">
+            <button id="subscribe-btn">Suscribir</button>
+          </div>
+        </div>
+        <div class="message-list" id="message-list">
+          <!-- Los mensajes se agregarán aquí dinámicamente -->
+        </div>
+        <button id="clear-messages-btn">Limpiar Mensajes</button>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="publish-tab">
+      <div class="publish-container">
+        <h3>Publicar Mensaje</h3>
+        <div class="form-group">
+          <label for="publish-topic">Tema:</label>
+          <input type="text" id="publish-topic" placeholder="espbell/response">
+        </div>
+        <div class="form-group">
+          <label for="publish-message">Mensaje:</label>
+          <input type="text" id="publish-message" placeholder="Mensaje a publicar">
+        </div>
+        <button id="publish-btn">Publicar</button>
+      </div>
+    </div>
+    
+    <div class="footer">
+      © 2025 EspBell MQTT Client - Desarrollado con Electron
+    </div>
+  </div>
+
+  <script>
+    // Referencias a elementos DOM
+    const statusIndicator = document.getElementById('status-indicator');
+    const connectionStatus = document.getElementById('connection-status');
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    const brokerUrl = document.getElementById('broker-url');
+    const brokerUsername = document.getElementById('broker-username');
+    const brokerPassword = document.getElementById('broker-password');
+    const messageList = document.getElementById('message-list');
+    const subscriptionTopic = document.getElementById('subscription-topic');
+    const subscribeBtn = document.getElementById('subscribe-btn');
+    const clearMessagesBtn = document.getElementById('clear-messages-btn');
+    const publishTopic = document.getElementById('publish-topic');
+    const publishMessage = document.getElementById('publish-message');
+    const publishBtn = document.getElementById('publish-btn');
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const versionNumber = document.getElementById('version-number');
+    const platformName = document.getElementById('platform-name');
+    
+    // Mostrar información de la aplicación
+    if (window.electronInfo) {
+      versionNumber.textContent = window.electronInfo.appVersion;
+      platformName.textContent = window.electronInfo.platform;
+    }
+    
+    // Funcionalidad de las pestañas
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab');
+        
+        // Cambiar la pestaña activa
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Mostrar el contenido de la pestaña activa
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+          if (content.id === `${tabName}-tab`) {
+            content.classList.add('active');
+          }
+        });
+      });
+    });
+    
+    // Manejar eventos de conexión MQTT
+    connectBtn.addEventListener('click', () => {
+      const url = brokerUrl.value.trim();
+      const username = brokerUsername.value.trim();
+      const password = brokerPassword.value.trim();
+      
+      if (!url) {
+        alert('Por favor, ingresa la URL del broker');
+        return;
+      }
+      
+      // Enviar petición de conexión al proceso principal
+      window.mqttAPI.connect({
+        url,
+        username: username || undefined,
+        password: password || undefined
+      });
+      
+      updateStatus('reconnecting', 'Conectando...');
+    });
+    
+    disconnectBtn.addEventListener('click', () => {
+      window.mqttAPI.disconnect();
+    });
+    
+    // Manejar suscripciones
+    subscribeBtn.addEventListener('click', () => {
+      const topic = subscriptionTopic.value.trim();
+      
+      if (!topic) {
+        alert('Por favor, ingresa un tema para suscribirte');
+        return;
+      }
+      
+      window.mqttAPI.subscribe(topic);
+      addMessage('Sistema', `Suscrito al tema: ${topic}`);
+    });
+    
+    // Manejar publicación de mensajes
+    publishBtn.addEventListener('click', () => {
+      const topic = publishTopic.value.trim();
+      const message = publishMessage.value.trim();
+      
+      if (!topic || !message) {
+        alert('Por favor, ingresa un tema y un mensaje');
+        return;
+      }
+      
+      window.mqttAPI.publish({
+        topic,
+        message
+      });
+      
+      addMessage('Publicado', `${topic}: ${message}`);
+      publishMessage.value = '';
+    });
+    
+    // Limpiar mensajes
+    clearMessagesBtn.addEventListener('click', () => {
+      messageList.innerHTML = '';
+    });
+    
+    // Escuchar mensajes MQTT desde el proceso principal
+    window.mqttAPI.onMessage((data) => {
+      addMessage(data.topic, data.message);
+    });
+    
+    // Escuchar cambios de estado MQTT
+    window.mqttAPI.onStatusChange((status, message) => {
+      updateStatus(status, message);
+    });
+    
+    // Función para actualizar el indicador de estado
+    function updateStatus(status, message) {
+      statusIndicator.className = 'status-indicator';
+      
+      switch (status) {
+        case 'connected':
+          statusIndicator.classList.add('connected');
+          connectionStatus.textContent = 'Conectado';
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          break;
+        case 'disconnected':
+          statusIndicator.classList.add('disconnected');
+          connectionStatus.textContent = 'Desconectado';
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          break;
+        case 'reconnecting':
+          statusIndicator.classList.add('reconnecting');
+          connectionStatus.textContent = message || 'Reconectando...';
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          break;
+        case 'error':
+          statusIndicator.classList.add('disconnected');
+          connectionStatus.textContent = message || 'Error de conexión';
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          break;
+      }
+    }
+    
+    // Función para agregar un mensaje a la lista
+    function addMessage(topic, message) {
+      const messageItem = document.createElement('div');
+      messageItem.className = 'message-item';
+      
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      
+      messageItem.innerHTML = `
+        <span class="topic">${topic}:</span> ${message}
+        <span class="timestamp">${timeString}</span>
+      `;
+      
+      messageList.appendChild(messageItem);
+      
+      // Auto-scroll al final
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+    
+    // Inicializar el estado
+    updateStatus('disconnected');
+    
+    // Agregar mensaje inicial
+    addMessage('Sistema', 'Cliente MQTT iniciado. Conecta a un broker para comenzar.');
+    
+    // Limpiar listeners al cerrar la ventana
+    window.addEventListener('beforeunload', () => {
+      if (window.mqttAPI && window.mqttAPI.removeAllListeners) {
+        window.mqttAPI.removeAllListeners();
+      }
+    });
+  </script>
+</body>
+</html>
