@@ -1,5 +1,5 @@
 // Archivo principal del proceso de Electron
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme } = require('electron');
 const path = require('path');
 const { MAIN_WINDOW_CONFIG, RENDERER_PATH } = require('./config');
 const mqttManager = require('./mqtt-manager');
@@ -19,6 +19,60 @@ function createWindow() {
   // Quitar la barra de menú
   mainWindow.setMenuBarVisibility(false);
 
+  // Crear un menú básico para todas las plataformas
+  const template = [
+    {
+      label: 'Archivo',
+      submenu: [
+        { role: 'quit', label: 'Salir' }
+      ]
+    },
+    {
+      label: 'Editar',
+      submenu: [
+        { role: 'undo', label: 'Deshacer' },
+        { role: 'redo', label: 'Rehacer' },
+        { type: 'separator' },
+        { role: 'cut', label: 'Cortar' },
+        { role: 'copy', label: 'Copiar' },
+        { role: 'paste', label: 'Pegar' },
+        { role: 'selectAll', label: 'Seleccionar todo' }
+      ]
+    },
+    {
+      label: 'Ver',
+      submenu: [
+        { role: 'reload', label: 'Recargar' },
+        { role: 'forceReload', label: 'Forzar recarga' },
+        { type: 'separator' },
+        { role: 'resetZoom', label: 'Restablecer zoom' },
+        { role: 'zoomIn', label: 'Acercar' },
+        { role: 'zoomOut', label: 'Alejar' },
+        { type: 'separator' },
+        { role: 'togglefullscreen', label: 'Pantalla completa' }
+      ]
+    }
+  ];
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+  
+  // Mostrar la ventana cuando el contenido está listo para evitar parpadeos
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    
+    // Efecto de aparición suave para todas las plataformas
+    mainWindow.setOpacity(0);
+    let opacity = 0;
+    const fadeIn = setInterval(() => {
+      opacity += 0.1;
+      if (opacity >= 1) {
+        opacity = 1;
+        clearInterval(fadeIn);
+      }
+      mainWindow.setOpacity(opacity);
+    }, 10);
+  });
+
   // Abre las herramientas de desarrollo (DevTools) si descomentas la siguiente línea
   // mainWindow.webContents.openDevTools();
 
@@ -35,18 +89,25 @@ function createWindow() {
 // Este método será llamado cuando Electron haya terminado
 // la inicialización y esté listo para crear ventanas del navegador.
 // Algunas APIs pueden usarse sólo después de que este evento ocurra.
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  
+  // Configurar detector de cambio de tema (claro/oscuro)
+  nativeTheme.on('updated', () => {
+    if (mainWindow) {
+      const isDarkMode = nativeTheme.shouldUseDarkColors;
+      mainWindow.webContents.send('theme-changed', { isDarkMode });
+    }
+  });
+});
 
-// Salir cuando todas las ventanas estén cerradas.
+// Salir cuando todas las ventanas estén cerradas
 app.on('window-all-closed', function () {
-  // En macOS es común para las aplicaciones y sus barras de menú
-  // que estén activas hasta que el usuario salga explícitamente con Cmd + Q
-  if (process.platform !== 'darwin') app.quit();
+  app.quit();
 });
 
 app.on('activate', function () {
-  // En macOS es común volver a crear una ventana en la aplicación cuando el
-  // icono del dock es clicado y no hay otras ventanas abiertas.
+  // Recrear la ventana si no existe cuando se activa la aplicación
   if (mainWindow === null) createWindow();
 });
 

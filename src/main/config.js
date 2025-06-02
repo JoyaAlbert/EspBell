@@ -8,13 +8,21 @@ const PUBLIC_PATH = path.join(APP_ROOT, 'public');
 
 // Configuración de la ventana principal
 const MAIN_WINDOW_CONFIG = {
-  width: 800,
-  height: 600,
+  width: 860,
+  height: 680,
+  minWidth: 700,
+  minHeight: 500,
+  backgroundColor: '#f5f5f7',
   webPreferences: {
     preload: path.join(__dirname, 'preload.js'),
     contextIsolation: true,
     nodeIntegration: false
-  }
+  },
+  show: false, // No mostrar hasta que esté listo para evitar parpadeo
+  frame: true, // Usar marco estándar en todas las plataformas
+  transparent: false, // Sin transparencia para consistencia
+  autoHideMenuBar: true, // Ocultar la barra de menú automáticamente
+  icon: path.join(PUBLIC_PATH, 'icon.png') // Icono consistente para todas las plataformas
 };
 
 // Configuración MQTT por defecto

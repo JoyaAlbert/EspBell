@@ -1,14 +1,18 @@
 # EspBell MQTT Client
 
-Una aplicación de escritorio basada en Electron para recibir y enviar instrucciones MQTT a dispositivos IoT.
+Una aplicación de escritorio basada en Electron para recibir y enviar instrucciones MQTT a dispositivos IoT, con un diseño elegante y moderno.
 
 ## Características
 
 - Conexión a cualquier broker MQTT
 - Suscripción a múltiples temas
 - Publicación de mensajes
-- Interfaz de usuario sencilla e intuitiva
+- Interfaz de usuario elegante y moderna
+- Soporte para tema claro y oscuro (automático según sistema)
+- Animaciones y efectos visuales suaves
+- Notificaciones integradas
 - Soporte para conexiones seguras con autenticación
+- Experiencia nativa en Windows y Linux
 
 ## Estructura del Proyecto
 
@@ -30,6 +34,51 @@ espbell/
 ├── package.json            # Dependencias y scripts
 └── README.md               # Este archivo
 ```
+
+## Temas Claro y Oscuro
+
+La aplicación soporta automáticamente temas claro y oscuro siguiendo la configuración del sistema operativo:
+
+- **Tema Claro**: Diseño limpio y luminoso para uso diurno
+- **Tema Oscuro**: Interfaz de bajo contraste para uso nocturno o en ambientes con poca luz
+
+## Diseño Moderno y Elegante
+
+El diseño de la aplicación presenta:
+
+- Interfaz limpia y minimalista
+- Esquinas redondeadas y controles modernos
+- Paleta de colores profesional
+- Animaciones suaves y transiciones fluidas
+- Notificaciones integradas no intrusivas
+- Iconografía minimalista
+
+## Construcción de la Aplicación
+
+Para construir la aplicación para diferentes plataformas:
+
+```bash
+# Iniciar en modo desarrollo
+npm start
+
+# Construir para Windows
+npm run build:win
+
+# Construir para Linux
+npm run build:linux
+
+# Construir versión portable para Windows
+npm run build:portable
+
+# Construir para todas las plataformas soportadas
+npm run build:all
+```
+
+## Requisitos
+
+- Node.js 16 o superior
+- npm o yarn
+- Electron 24 o superior
 
 ## Instalación
 
@@ -100,6 +149,3 @@ npm run build:win   # Construir para Windows
 
 ISC
 
-## Contacto
-
-Email: ejemplo@espbell.com

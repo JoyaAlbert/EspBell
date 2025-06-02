@@ -28,3 +28,14 @@ contextBridge.exposeInMainWorld('electronInfo', {
   appVersion: process.env.npm_package_version || 'desconocida',
   platform: process.platform
 });
+
+// Exponer API para tema claro/oscuro
+contextBridge.exposeInMainWorld('themeAPI', {
+  // Escuchar cambios de tema del sistema
+  onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (event, themeData) => callback(themeData)),
+  
+  // Método para limpiar los listeners
+  removeThemeListeners: () => {
+    ipcRenderer.removeAllListeners('theme-changed');
+  }
+});
