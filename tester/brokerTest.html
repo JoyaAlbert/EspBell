@@ -228,6 +228,9 @@
                 Enviar mensaje
             </div>
             <div class="input-group">
+                <input type="text" id="topicInput" placeholder="Topic (ej: casa/timbre)" value="casa/timbre" autocomplete="off">
+            </div>
+            <div class="input-group">
                 <input type="text" id="messageInput" placeholder="Escribe un mensaje..." autocomplete="off">
                 <button id="sendBtn">Enviar</button>
             </div>
@@ -252,7 +255,7 @@
 
     <script>
         // Configuración WebSocket para proxy MQTT
-        const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket('ws://localhost:1777');
         const topic = 'casa/timbre';
         const clientId = 'web_' + Math.random().toString(16).substr(2, 8);
         
@@ -261,6 +264,7 @@
         const statusText = document.getElementById('statusText');
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
+        const topicInput = document.getElementById('topicInput');
         const sendBtn = document.getElementById('sendBtn');
         
         // Manejo de conexión WebSocket
@@ -379,14 +383,16 @@
             const message = messageInput.value.trim();
             if (message.length === 0) return;
             
+            const customTopic = topicInput.value.trim() || topic;
+            
             ws.send(JSON.stringify({
                 type: 'publish',
-                topic: topic,
+                topic: customTopic,
                 message: message
             }));
             
-            console.log(`Mensaje enviado a ${topic}: ${message}`);
-            addMessage('Enviado', message);
+            console.log(`Mensaje enviado a ${customTopic}: ${message}`);
+            addMessage('Enviado', `Topic: ${customTopic} | ${message}`);
             messageInput.value = '';
         }
         

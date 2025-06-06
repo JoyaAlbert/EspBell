@@ -95,9 +95,23 @@ app.whenReady().then(() => {
             message: message.toString()
           });
           
-          // Si el mensaje es del topic del timbre, enviar un evento especial
+          // Si el mensaje es del topic del timbre, enviar un evento especial y mostrar la ventana
           if (topic === 'casa/timbre') {
             mainWindow.webContents.send('doorbell-alert', message.toString());
+            
+            // Mostrar y enfocar la ventana
+            if (!mainWindow.isVisible()) {
+              mainWindow.show();
+            }
+            if (!mainWindow.isFocused()) {
+              mainWindow.focus();
+            }
+            // En algunos sistemas operativos, forzar que la ventana esté en primer plano
+            mainWindow.setAlwaysOnTop(true);
+            // Después de un breve momento, desactivar always on top
+            setTimeout(() => {
+              mainWindow.setAlwaysOnTop(false);
+            }, 3000);
           }
         }
       });
