@@ -1,9 +1,11 @@
 {
   "appId": "com.espbell.app",
   "productName": "EspBell MQTT Client",
-  "directories": {
-    "output": "dist",
-    "buildResources": "public"
+  "build": {
+    "directories": {
+      "output": "dist",
+      "buildResources": "public"
+    }
   },
   "linux": {
     "target": ["AppImage", "deb"],
