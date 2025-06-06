@@ -62,6 +62,7 @@ class MqttManager {
     });
   }
 
+  
   // Método para cancelar la suscripción a un tema
   unsubscribe(topic) {
     if (!this.client || !this.client.connected) {
