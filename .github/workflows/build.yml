@@ -2,14 +2,13 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main  # o master, dependiendo de tu rama principal
+    branches: [main, master]  # Se ejecutará en cualquiera de estas ramas principales
     paths:
       - 'APP/**'  # Solo se ejecuta cuando hay cambios en la carpeta APP
 
 jobs:
   build:
-    runs-on: windows-latest # We'll use Windows for building the .exe
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -32,17 +31,17 @@ jobs:
 
       - name: Generate Release Name
         id: release_name
+        shell: bash
         run: |
-          echo "release_name=$(date +'%Y%m%d')_$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$(date +'%Y%m%d')_$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: build_${{ env.release_name }}
-          name: Build ${{ env.release_name }}
+          tag_name: build_${{ env.RELEASE_NAME }}
+          name: Build ${{ env.RELEASE_NAME }}
           draft: false
           prerelease: false
           files: |
