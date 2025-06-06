@@ -61,7 +61,7 @@ wss.on('connection', function connection(ws) {
     });
 });
 
-const PORT = 8080;
+const PORT = 1777;
 server.listen(PORT, () => {
     console.log(`Proxy ejecutándose en puerto ${PORT}`);
 });
