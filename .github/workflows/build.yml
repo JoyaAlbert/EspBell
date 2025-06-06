@@ -1,0 +1,41 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # This will trigger the workflow when you push a tag that starts with 'v'
+
+jobs:
+  build:
+    runs-on: windows-latest # We'll use Windows for building the .exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './APP/package.json'
+
+      - name: Install dependencies
+        working-directory: ./APP
+        run: npm install
+
+      - name: Build application
+        working-directory: ./APP
+        run: npm run build:win
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            ./APP/dist/*.exe
