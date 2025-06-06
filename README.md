@@ -51,5 +51,37 @@ EspBell/
    - Use tools in `tester` folder
    - Connect to broker via WebSocket proxy
 
+## Deployment & Releases
+
+This project uses GitHub Actions for automated builds and releases. When you want to create a new release with the Windows executable:
+
+1. Update the version in `APP/package.json`
+2. Commit your changes:
+   ```bash
+   git add .
+   git commit -m "Release vX.Y.Z"
+   ```
+
+3. Create and push a new tag:
+   ```bash
+   git tag vX.Y.Z
+   git push origin main --tags
+   ```
+
+For example, for version 1.0.0:
+```bash
+git add .
+git commit -m "Release v1.0.0"
+git tag v1.0.0
+git push origin main --tags
+```
+
+The GitHub Actions workflow will automatically:
+- Build the Windows executable (.exe)
+- Create a new GitHub release
+- Upload the executable to the release
+
+
+
 
 
