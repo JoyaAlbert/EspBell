@@ -53,24 +53,36 @@ EspBell/
 
 ## Deployment & Releases
 
-This project uses GitHub Actions for automated builds and releases. A new release will be automatically created every time you push changes to the `main` branch that affect the `APP` folder.
+This project uses a semantic versioning system for releases. The application name is always "ESPBell" (without version information in the filename).
 
-The process is completely automatic:
+### Creating a New Release
 
-1. Make your changes in the code
-2. Commit and push to main:
+To create a new release:
+
+1. Navigate to the APP directory:
    ```bash
-   git add .
-   git commit -m "Your commit message"
-   git push origin main
+   cd APP
    ```
 
-The GitHub Actions workflow will automatically:
-- Build the Windows executable (.exe)
-- Create a new GitHub release with format `YYYYMMDD_commit-hash`
-- Upload the executable to the release
+2. Run the release script with the desired version number:
+   ```bash
+   npm run release 1.2.3 "Description of changes in this version"
+   ```
+   Where:
+   - `1.2.3` is the version number in x.y.z format
+   - The description is optional but recommended
 
-Each release will be tagged automatically with the date and commit hash, making it easy to track which version corresponds to which code changes.
+3. The script will:
+   - Create a Git tag with format `v1.2.3`
+   - Push the tag to GitHub
+   - Build the application for Windows and Linux
+   - Provide instructions for uploading the files to GitHub
+
+### Automatic Update Detection
+
+The application automatically checks for new versions when it starts. If a newer version is available, it will display a notification with a download button that takes users to the GitHub release page.
+
+For more detailed information about the versioning system, see [VERSIONES.md](APP/docs/VERSIONES.md).
 
 
 

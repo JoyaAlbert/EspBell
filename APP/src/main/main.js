@@ -22,12 +22,22 @@ async function checkForUpdates() {
   try {
     const response = await axios.get(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
     const latestRelease = response.data;
-    const latestVersion = latestRelease.tag_name.replace('v', ''); // Eliminar 'v' del tag si existe
     
-    console.log(`Versión actual: ${CURRENT_VERSION}, Última versión disponible: ${latestVersion}`);
+    // El tag_name debe tener el formato vx.y.z (según los commits)
+    const tagVersion = latestRelease.tag_name;
+    // Conservamos el formato completo del tag (con la 'v')
+    const latestVersion = tagVersion;
     
-    // Comparar versiones
-    if (latestVersion > CURRENT_VERSION) {
+    console.log(`Versión actual: v${CURRENT_VERSION}, Última versión disponible: ${latestVersion}`);
+    
+    // Comparamos solo los números sin la 'v'
+    const currentVersionNum = CURRENT_VERSION;
+    const latestVersionNum = latestVersion.replace(/^v/, '');
+    
+    // Comparación de versiones utilizando semver
+    const isNewer = compareVersions(latestVersionNum, currentVersionNum);
+    
+    if (isNewer > 0) {
       console.log('Hay una nueva versión disponible');
       return {
         hasUpdate: true,
@@ -42,6 +52,23 @@ async function checkForUpdates() {
     console.error('Error al verificar actualizaciones:', error.message);
     return { hasUpdate: false, error: error.message };
   }
+}
+
+// Función para comparar versiones (simplificada)
+function compareVersions(v1, v2) {
+  const parts1 = v1.split('.').map(Number);
+  const parts2 = v2.split('.').map(Number);
+  
+  // Comparar las partes de la versión
+  for(let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const part1 = parts1[i] || 0;
+    const part2 = parts2[i] || 0;
+    
+    if(part1 > part2) return 1;  // v1 es mayor
+    if(part1 < part2) return -1; // v2 es mayor
+  }
+  
+  return 0; // Versiones iguales
 }
 
 function createWindow() {

@@ -1,23 +1,28 @@
 // Este archivo configura una construcción más simple para Windows
 const path = require('path');
 const builder = require('electron-builder');
+const fs = require('fs');
+
+// Leer la versión actual del package.json
+const packageJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
+const version = packageJson.version;
 
 builder.build({
   targets: builder.Platform.WINDOWS.createTarget(),
   config: {
     appId: "com.espbell.app",
-    productName: "EspBell MQTT Client",
+    productName: "ESPBell",
     directories: {
       output: "dist",
       buildResources: "public"
     },
     win: {
       target: ['portable', 'nsis'],
-      artifactName: '${productName}-${version}.${ext}',
+      artifactName: 'ESPBell.${ext}',
       rfc3161TimeStampServer: null,
       timeStampServer: null,
-      publisherName: "EspBell",
-      shortcutName: "EspBell MQTT Client"
+      publisherName: "ESPBell",
+      shortcutName: "ESPBell"
     },
     nsis: {
       oneClick: true,

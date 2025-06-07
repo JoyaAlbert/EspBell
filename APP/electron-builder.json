@@ -1,6 +1,6 @@
 {
   "appId": "com.espbell.app",
-  "productName": "EspBell MQTT Client",
+  "productName": "ESPBell",
   "directories": {
     "output": "dist",
     "buildResources": "public"
@@ -24,11 +24,12 @@
     "target": ["AppImage", "deb"],
     "category": "Utility",
     "description": "Cliente MQTT para recibir instrucciones",
-    "icon": "public/icon.png"
+    "icon": "public/icon.png",
+    "artifactName": "ESPBell.${ext}"
   },
   "win": {
     "target": ["portable", "nsis"],
-    "artifactName": "${productName}-${version}.${ext}",
+    "artifactName": "ESPBell.${ext}",
     "icon": "public/icon.ico"
   },
   "nsis": {
