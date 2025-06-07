@@ -35,7 +35,9 @@
     "mqtt": "^5.13.0",
     "ws": "^8.18.2"
   },
-  "directories": {
-    "doc": "docs"
+  "build": {
+    "directories": {
+      "doc": "docs"
+    }
   }
 }
