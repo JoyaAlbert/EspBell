@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('mqttAPI', {
 
 // También puedes exponer variables del entorno o información del sistema
 contextBridge.exposeInMainWorld('electronInfo', {
-  appVersion: process.env.npm_package_version || 'desconocida',
+  appVersion: process.env.npm_package_version || require('electron').remote?.app.getVersion() || 'desconocida',
   platform: process.platform
 });
 
@@ -40,5 +40,19 @@ contextBridge.exposeInMainWorld('themeAPI', {
   // Método para limpiar los listeners
   removeThemeListeners: () => {
     ipcRenderer.removeAllListeners('theme-changed');
+  }
+});
+
+// Exponer API para actualizaciones
+contextBridge.exposeInMainWorld('updateAPI', {
+  // Escuchar cuando hay actualizaciones disponibles
+  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', (event, updateInfo) => callback(updateInfo)),
+  
+  // Abrir el enlace de descarga
+  openUpdateLink: (url) => ipcRenderer.send('open-update-link', url),
+  
+  // Método para limpiar los listeners
+  removeUpdateListeners: () => {
+    ipcRenderer.removeAllListeners('update-available');
   }
 });

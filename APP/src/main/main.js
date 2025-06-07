@@ -1,6 +1,7 @@
 // Archivo principal del proceso de Electron
-const { app, BrowserWindow, ipcMain, Menu, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme, shell } = require('electron');
 const path = require('path');
+const axios = require('axios');
 const { MAIN_WINDOW_CONFIG, RENDERER_PATH } = require('./config');
 const mqttManager = require('./mqtt-manager');
 
@@ -11,6 +12,37 @@ if (require('electron-squirrel-startup')) app.quit();
 // para evitar que la ventana se cierre automáticamente 
 // cuando el objeto JavaScript es basura recolectada.
 let mainWindow;
+
+// Información de la versión actual y GitHub
+const GITHUB_REPO = 'JoyaAlbert/EspBell';
+const CURRENT_VERSION = app.getVersion(); // Obtiene la versión del package.json
+
+// Función para verificar si hay una nueva versión disponible
+async function checkForUpdates() {
+  try {
+    const response = await axios.get(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+    const latestRelease = response.data;
+    const latestVersion = latestRelease.tag_name.replace('v', ''); // Eliminar 'v' del tag si existe
+    
+    console.log(`Versión actual: ${CURRENT_VERSION}, Última versión disponible: ${latestVersion}`);
+    
+    // Comparar versiones
+    if (latestVersion > CURRENT_VERSION) {
+      console.log('Hay una nueva versión disponible');
+      return {
+        hasUpdate: true,
+        version: latestVersion,
+        releaseUrl: latestRelease.html_url,
+        releaseNotes: latestRelease.body
+      };
+    }
+    
+    return { hasUpdate: false };
+  } catch (error) {
+    console.error('Error al verificar actualizaciones:', error.message);
+    return { hasUpdate: false, error: error.message };
+  }
+}
 
 function createWindow() {
   // Crear la ventana del navegador.
@@ -55,7 +87,7 @@ function createWindow() {
 // Este método será llamado cuando Electron haya terminado
 // la inicialización y esté listo para crear ventanas del navegador.
 // Algunas APIs pueden usarse sólo después de que este evento ocurra.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
   
   // Configurar detector de cambio de tema (claro/oscuro)
@@ -65,6 +97,12 @@ app.whenReady().then(() => {
       mainWindow.webContents.send('theme-changed', { isDarkMode });
     }
   });
+  
+  // Verificar actualizaciones
+  const updateInfo = await checkForUpdates();
+  if (updateInfo.hasUpdate && mainWindow) {
+    mainWindow.webContents.send('update-available', updateInfo);
+  }
   
   // Conectar automáticamente al broker MQTT en el ESP32
   setTimeout(() => {
@@ -180,6 +218,11 @@ ipcMain.on('set-theme', (event, isDarkMode) => {
   if (mainWindow) {
     mainWindow.webContents.send('theme-changed', { isDarkMode });
   }
+});
+
+// Manejador para abrir el enlace de descarga de la actualización
+ipcMain.on('open-update-link', (event, url) => {
+  shell.openExternal(url);
 });
 
 // Configuración para inicio automático en Windows

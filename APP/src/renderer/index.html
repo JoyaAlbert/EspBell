@@ -623,7 +623,123 @@
     window.addEventListener('beforeunload', () => {
       window.mqttAPI.removeAllListeners();
       window.themeAPI.removeThemeListeners();
+      window.updateAPI.removeUpdateListeners();
+    });
+    
+    // Escuchar actualizaciones disponibles
+    window.updateAPI.onUpdateAvailable((updateInfo) => {
+      const updateNotification = document.createElement('div');
+      updateNotification.className = 'update-notification';
+      updateNotification.innerHTML = `
+        <div class="update-notification-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M21,10.12H14.22L16.96,7.3C14.23,4.6 9.81,4.5 7.08,7.2C4.35,9.91 4.35,14.28 7.08,17C9.81,19.7 14.23,19.7 16.96,17C18.32,15.65 19,14.08 19,12.1H21C21,14.08 20.12,16.65 18.36,18.39C14.85,21.87 9.15,21.87 5.64,18.39C2.14,14.92 2.11,9.28 5.62,5.81C9.13,2.34 14.76,2.34 18.27,5.81L21,3V10.12M12.5,8V12.25L16,14.33L15.28,15.54L11,13V8H12.5Z"></path>
+          </svg>
+          Nueva versión disponible
+        </div>
+        <div class="update-notification-content">
+          Hay una nueva versión (${updateInfo.version}) disponible para descargar.
+        </div>
+        <div class="update-notification-actions">
+          <button class="update-notification-dismiss" id="update-dismiss">Luego</button>
+          <button class="update-notification-button" id="update-download">Descargar</button>
+        </div>
+      `;
+      
+      document.body.appendChild(updateNotification);
+      
+      // Mostrar la notificación con animación
+      setTimeout(() => {
+        updateNotification.style.display = 'block';
+      }, 1000);
+      
+      // Configurar botones
+      document.getElementById('update-dismiss').addEventListener('click', () => {
+        updateNotification.style.display = 'none';
+      });
+      
+      document.getElementById('update-download').addEventListener('click', () => {
+        window.updateAPI.openUpdateLink(updateInfo.releaseUrl);
+        updateNotification.style.display = 'none';
+      });
     });
   </script>
+  
+  <!-- Estilos CSS para la notificación de actualización -->
+  <style>
+    .update-notification {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background-color: var(--apple-panel-solid);
+      border-radius: var(--apple-radius);
+      box-shadow: 0 4px 12px var(--apple-shadow-strong);
+      padding: 15px;
+      width: 300px;
+      z-index: 1000;
+      border: 1px solid var(--apple-border);
+      animation: slide-in 0.3s ease-out;
+    }
+    
+    @keyframes slide-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .update-notification-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--apple-text);
+      display: flex;
+      align-items: center;
+    }
+    
+    .update-notification-title svg {
+      margin-right: 8px;
+      fill: var(--apple-accent);
+    }
+    
+    .update-notification-content {
+      font-size: 14px;
+      margin-bottom: 15px;
+      color: var(--apple-text-secondary);
+    }
+    
+    .update-notification-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    .update-notification-button {
+      background-color: var(--apple-accent);
+      color: white;
+      border: none;
+      border-radius: var(--apple-radius-button);
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--apple-transition);
+    }
+    
+    .update-notification-button:hover {
+      background-color: var(--apple-accent-hover);
+    }
+    
+    .update-notification-dismiss {
+      background-color: transparent;
+      color: var(--apple-text-secondary);
+      border: none;
+      margin-right: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 16px;
+    }
+    
+    .update-notification-dismiss:hover {
+      color: var(--apple-text);
+    }
+  </style>
 </body>
 </html>
