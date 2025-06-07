@@ -209,3 +209,4 @@ function setupAutoLaunch() {
 // Ejecutar la configuración de inicio automático
 setupAutoLaunch();
 // Test change
+// Test change 2
