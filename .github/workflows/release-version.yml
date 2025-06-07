@@ -1,0 +1,94 @@
+name: Build and Release ESPBell
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'APP/**'  # Solo se ejecuta cuando hay cambios en la carpeta APP
+
+# Permisos necesarios para crear releases
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  check-commit-version:
+    runs-on: ubuntu-latest
+    outputs:
+      has_version: ${{ steps.check-commit.outputs.has_version }}
+      version: ${{ steps.check-commit.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Check commit message for version tag
+        id: check-commit
+        run: |
+          # Obtener el mensaje del último commit
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MSG"
+          
+          # Verificar si contiene una etiqueta de versión vX.Y.Z
+          if [[ $COMMIT_MSG =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            VERSION=${BASH_REMATCH[0]}
+            echo "Found version tag: $VERSION"
+            echo "has_version=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "No version tag found in commit message"
+            echo "has_version=false" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: check-commit-version
+    if: needs.check-commit-version.outputs.has_version == 'true'
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          
+      - name: Install dependencies
+        run: |
+          cd APP
+          npm ci
+          
+      - name: Update version in package.json
+        run: |
+          cd APP
+          $version = "${{ needs.check-commit-version.outputs.version }}"
+          $version = $version -replace "v", ""
+          $packageJson = Get-Content -Path package.json | ConvertFrom-Json
+          $packageJson.version = $version
+          $packageJson | ConvertTo-Json -Depth 100 | Set-Content -Path package.json
+          
+      - name: Build app
+        run: |
+          cd APP
+          npm run build:win
+          
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.check-commit-version.outputs.version }}
+          name: ESPBell ${{ needs.check-commit-version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            ./APP/dist/ESPBell.exe
+            ./APP/dist/*.msi
+          body: |
+            Release automático de ESPBell ${{ needs.check-commit-version.outputs.version }}
+            
+            Este release fue generado automáticamente desde el commit que contiene la versión ${{ needs.check-commit-version.outputs.version }} en el mensaje.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

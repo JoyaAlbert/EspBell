@@ -86,36 +86,39 @@ npm run build:linux # Build for Linux
 
 ## 📦 Distribution and Versioning
 
-ESPBell uses semantic versioning (x.y.z) for releases. The application executable is always named "ESPBell" without version information in the filename.
+ESPBell usa un sistema de versionado semántico. El ejecutable siempre se llama "ESPBell" sin información de versión en el nombre del archivo.
 
-### Creating a Release
+### Crear un Release
+
+Para crear un nuevo release, simplemente incluye la versión en el mensaje del commit:
 
 ```bash
-# Create a new release (replace 1.2.3 with the version number)
-npm run release 1.2.3 "Description of changes"
+git add .
+git commit -m "Descripción de los cambios v1.2.3"
+git push origin main
 ```
 
-This will:
-1. Create a Git tag with the format `v1.2.3`
-2. Push the tag to GitHub
-3. Build the application with the version number
-4. Provide instructions for creating a GitHub release
+Esto activará GitHub Actions que:
+1. Detectará la versión en el mensaje del commit
+2. Actualizará la versión en package.json
+3. Generará el ejecutable
+4. Creará un release en GitHub con la etiqueta v1.2.3
 
-### Automatic Updates
+### Actualizaciones Automáticas
 
-The application automatically checks for new versions on GitHub when it starts. If a newer version is available, it will display a notification with a button to download the update.
+La aplicación verifica automáticamente si hay nuevas versiones en GitHub al iniciarse. Si encuentra una versión más reciente, mostrará una notificación con un botón para descargar la actualización.
 
-For more details about the versioning system, see [VERSIONES.md](./docs/VERSIONES.md).
+Para más detalles sobre el sistema de versiones, consulta [VERSIONES.md](./docs/VERSIONES.md).
 
-### Build Artifacts
+### Archivos Generados
 
-Build artifacts are generated in `dist/` folder:
+Los archivos generados se encuentran en la carpeta `dist/`:
 
 ```bash
 dist/
 ├── win-unpacked/  # Windows portable
 ├── linux-unpacked/# Linux portable
-└── ESPBell.exe, ESPBell.AppImage, etc.  # Installers
+└── ESPBell.exe, ESPBell.AppImage, etc.  # Instaladores
 ```
 
 

@@ -53,36 +53,32 @@ EspBell/
 
 ## Deployment & Releases
 
-This project uses a semantic versioning system for releases. The application name is always "ESPBell" (without version information in the filename).
+Este proyecto utiliza GitHub Actions para crear releases automáticamente cuando se incluye un número de versión en el mensaje de commit.
 
-### Creating a New Release
+### Cómo crear un nuevo release
 
-To create a new release:
-
-1. Navigate to the APP directory:
+1. Realiza los cambios necesarios en el código
+2. Cuando estés listo para crear un release, incluye la versión en el mensaje del commit:
    ```bash
-   cd APP
+   git add .
+   git commit -m "Descripción de los cambios v1.2.3"
+   git push origin main
    ```
 
-2. Run the release script with the desired version number:
-   ```bash
-   npm run release 1.2.3 "Description of changes in this version"
-   ```
-   Where:
-   - `1.2.3` is the version number in x.y.z format
-   - The description is optional but recommended
+El proceso es automático:
+- GitHub Actions detectará la versión en el formato `vX.Y.Z` en el mensaje del commit
+- Solo se activará si hay cambios en la carpeta `APP`
+- Generará el ejecutable con el nombre `ESPBell.exe` (sin versión en el nombre)
+- Creará un nuevo release en GitHub con la etiqueta `vX.Y.Z`
+- Subirá los ejecutables al release
 
-3. The script will:
-   - Create a Git tag with format `v1.2.3`
-   - Push the tag to GitHub
-   - Build the application for Windows and Linux
-   - Provide instructions for uploading the files to GitHub
+Los commits normales sin número de versión no activarán el proceso de release.
 
-### Automatic Update Detection
+### Actualizaciones automáticas
 
-The application automatically checks for new versions when it starts. If a newer version is available, it will display a notification with a download button that takes users to the GitHub release page.
+La aplicación verifica automáticamente si hay nuevas versiones disponibles cuando se inicia. Si encuentra una versión más reciente, mostrará una notificación con un botón para descargar la actualización.
 
-For more detailed information about the versioning system, see [VERSIONES.md](APP/docs/VERSIONES.md).
+Para más información sobre el sistema de versiones, consulta [VERSIONES.md](APP/docs/VERSIONES.md)
 
 
 

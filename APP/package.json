@@ -1,6 +1,6 @@
 {
   "name": "espbell",
-  "version": "1.0.0",
+  "version": "1.2.3",
   "main": "src/main/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,8 +14,7 @@
     "build:all": "npm run update-version && electron-builder -wl --config electron-builder.json",
     "build:win:simple": "npm run update-version && node build-windows.js",
     "build:quick": "npm run update-version && ./scripts/build-win-linux.sh",
-    "clean": "./scripts/clean.sh",
-    "release": "./scripts/create-release.sh"
+    "clean": "./scripts/clean.sh"
   },
   "keywords": [
     "electron",

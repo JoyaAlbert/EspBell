@@ -4,28 +4,28 @@ Este documento explica cómo funcionan las versiones y los releases en el proyec
 
 ## Formato de Versiones
 
-Las versiones siguen el formato estándar `x.y.z` (por ejemplo, `1.2.3`), donde:
-- `x` es el número de versión mayor (cambios importantes)
-- `y` es el número de versión menor (nuevas funcionalidades)
-- `z` es el número de revisión (correcciones de errores)
+Las versiones siguen el formato estándar `vX.Y.Z` (por ejemplo, `v1.2.3`), donde:
+- `X` es el número de versión mayor (cambios importantes)
+- `Y` es el número de versión menor (nuevas funcionalidades)
+- `Z` es el número de revisión (correcciones de errores)
 
 ## Cómo Crear un Nuevo Release
 
-Para crear un nuevo release, utiliza el siguiente comando:
+Para crear un nuevo release, simplemente incluye la versión en el mensaje del commit cuando haces push a la rama principal:
 
 ```bash
-npm run release 1.2.3 "Descripción del release"
+git add .
+git commit -m "Añadida nueva funcionalidad v1.2.3"
+git push origin main
 ```
 
-Donde:
-- `1.2.3` es el número de versión que quieres usar
-- `"Descripción del release"` es un mensaje opcional que describe los cambios
+**Importante**: El mensaje del commit debe contener la versión en formato `vX.Y.Z`. Esto activará automáticamente el flujo de trabajo de GitHub Actions que:
 
-Este comando hará lo siguiente:
-1. Creará un tag de Git con el formato `v1.2.3`
-2. Enviará el tag al repositorio remoto
-3. Construirá la aplicación con esta versión
-4. Te dará instrucciones para subir los archivos a GitHub
+1. Detectará la versión en el mensaje del commit
+2. Actualizará la versión en `package.json`
+3. Construirá la aplicación
+4. Creará un release en GitHub con la etiqueta `vX.Y.Z`
+5. Subirá los archivos ejecutables al release
 
 ## Nombres de Archivos
 
@@ -37,16 +37,22 @@ La aplicación verifica automáticamente si hay nuevas versiones disponibles al 
 
 ## Notas Importantes
 
-- El proceso de actualización no es automático. Cuando el usuario hace clic en el botón de descarga, se le redirige a la página de GitHub donde puede descargar manualmente la nueva versión.
-- La versión de la aplicación se obtiene del tag de Git más reciente, por lo que es importante seguir el formato correcto (`vx.y.z`) al crear tags.
-- Para que la verificación de actualizaciones funcione correctamente, debes crear releases oficiales en GitHub utilizando los tags generados.
+- El flujo de trabajo de GitHub Actions **solo** se activa cuando:
+  - Se hacen cambios en la carpeta `APP`
+  - El mensaje del commit contiene una versión en formato `vX.Y.Z`
+  
+- Puedes hacer commits y pushes normales sin generar releases automáticos, siempre que no incluyas un número de versión en el mensaje del commit.
+
+- La versión de la aplicación se obtiene del mensaje del commit, por lo que es importante seguir el formato correcto (`vX.Y.Z`).
 
 ## Ejemplo de Flujo de Trabajo
 
 1. Desarrolla nuevas funcionalidades o correcciones
-2. Cuando estés listo para lanzar una nueva versión, ejecuta:
+2. Cuando estés listo para lanzar una nueva versión:
    ```bash
-   npm run release 1.2.3 "Nueva versión con correcciones importantes"
+   git add .
+   git commit -m "Implementada función de notificaciones v1.2.3"
+   git push origin main
    ```
-3. Sigue las instrucciones para completar el release en GitHub
+3. GitHub Actions generará automáticamente el release con la versión 1.2.3
 4. Los usuarios serán notificados de la nueva versión cuando inicien la aplicación
