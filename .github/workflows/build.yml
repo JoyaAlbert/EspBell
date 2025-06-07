@@ -6,6 +6,13 @@ on:
     paths:
       - 'APP/**'  # Solo se ejecuta cuando hay cambios en la carpeta APP
 
+# Agregar permisos explícitos para crear releases
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: windows-latest
