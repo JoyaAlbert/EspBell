@@ -34,10 +34,5 @@
     "electron-squirrel-startup": "^1.0.1",
     "mqtt": "^5.13.0",
     "ws": "^8.18.2"
-  },
-  "build": {
-    "directories": {
-      "doc": "docs"
-    }
   }
 }
