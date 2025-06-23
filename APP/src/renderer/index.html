@@ -319,75 +319,285 @@
       }
     }
     
-    /* Formulario de publicación */
-    .publish-form {
+    /* Estilos para la sección de chat */
+    .chat-container {
+      display: flex;
+      height: 100%;
+      border: 1px solid var(--apple-border);
+      border-radius: var(--apple-radius);
+      overflow: hidden;
+      background: var(--apple-panel-solid);
+    }
+
+    .chat-sidebar {
+      width: 200px;
+      background: var(--apple-panel);
+      border-right: 1px solid var(--apple-border);
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .chat-sidebar h3 {
+      padding: 15px;
+      margin: 0;
+      background: var(--apple-panel-solid);
+      border-bottom: 1px solid var(--apple-border);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .contact-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .contact-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      cursor: pointer;
+      transition: var(--apple-transition);
+      border-bottom: 1px solid var(--apple-border);
+    }
+
+    .contact-item:hover {
+      background: var(--apple-accent-light);
+    }
+
+    .contact-item.active {
+      background: var(--apple-accent);
+      color: white;
+    }
+
+    .contact-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .unread-count {
+      background: var(--apple-error);
+      color: white;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 11px;
+      min-width: 16px;
+      text-align: center;
+      display: none;
+    }
+
+    .unread-count.show {
+      display: block;
+    }
+
+    .chat-main {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      max-width: 100%;
     }
-    
-    .form-group {
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background: var(--apple-panel);
+      border-bottom: 1px solid var(--apple-border);
+    }
+
+    .chat-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .connection-status {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: var(--apple-error);
+      color: white;
+    }
+
+    .connection-status.connected {
+      background: var(--apple-success);
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      background: var(--apple-bg);
     }
-    
-    label {
-      font-weight: 500;
+
+    .message {
+      max-width: 70%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      word-wrap: break-word;
+      position: relative;
+      animation: fadeInMessage 0.3s ease-out;
+      transform-origin: bottom;
+    }
+
+    @keyframes fadeInMessage {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      background: var(--apple-accent);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      background: var(--apple-panel-solid);
       color: var(--apple-text);
-    }
-    
-    input[type="text"], textarea {
-      padding: 12px;
-      border-radius: var(--apple-radius);
       border: 1px solid var(--apple-border);
-      background-color: var(--apple-panel-solid);
-      color: var(--apple-text);
-      font-size: 16px;
-      transition: var(--apple-transition);
-      width: 100%;
-      box-sizing: border-box;
+      border-bottom-left-radius: 4px;
     }
-    
-    input[type="text"]:focus, textarea:focus {
+
+    .message-time {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .message.received .message-time {
+      text-align: left;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 12px;
+      gap: 8px;
+      background: var(--apple-panel);
+      border-top: 1px solid var(--apple-border);
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--apple-border);
+      border-radius: 20px;
+      background: var(--apple-panel-solid);
+      color: var(--apple-text);
+      font-size: 14px;
       outline: none;
+      transition: var(--apple-transition);
+    }
+
+    .chat-input input:focus {
       border-color: var(--apple-accent);
       box-shadow: 0 0 0 2px var(--apple-accent-light);
+      transform: scale(1.02);
     }
-    
-    textarea {
-      resize: vertical;
-      min-height: 100px;
+
+    .chat-input button {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      min-width: 60px;
+      transition: all 0.2s ease;
     }
-    
-    button {
-      background-color: var(--apple-accent);
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: var(--apple-radius-button);
-      font-weight: 500;
-      font-size: 16px;
-      cursor: pointer;
-      transition: var(--apple-transition);
-      max-width: 100%;
+
+    .chat-input button:not(:disabled):hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px var(--apple-shadow);
     }
-    
-    button:hover {
-      background-color: var(--apple-accent-hover);
+
+    .chat-input button:not(:disabled):active {
+      transform: scale(0.98);
     }
-    
-    .success-message {
-      color: var(--apple-success);
-      margin-top: 16px;
-      font-weight: 500;
-      display: none;
+
+    /* Responsive para pantallas pequeñas */
+    @media (max-width: 600px) {
+      .chat-sidebar {
+        width: 150px;
+      }
+
+      .contact-item {
+        padding: 10px 12px;
+      }
+
+      .contact-name {
+        font-size: 13px;
+      }
+
+      .message {
+        max-width: 85%;
+      }
+
+      .chat-input {
+        padding: 8px;
+      }
     }
-    
-    /* Mostrar contenido de la pestaña activa */
-    #waiting-tab-content {
-      display: block;
+
+    /* Mensaje de bienvenida */
+    .welcome-message {
+      text-align: center;
+      color: var(--apple-text-secondary);
+      font-style: italic;
+      padding: 20px;
+      opacity: 0.7;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 0.7; }
+    }
+
+    /* Mejoras para el contador de mensajes no leídos */
+    .unread-count {
+      animation: bounce 0.5s ease-out;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-4px);
+      }
+      60% {
+        transform: translateY(-2px);
+      }
+    }
+
+    /* Hover effects para contactos */
+    .contact-item {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .contact-item:hover::before {
+      left: 100%;
     }
   </style>
 </head>
@@ -405,12 +615,12 @@
   
   <div class="tab-container">
     <div class="tabs">
-      <div class="tab active" data-tab="waiting">Esperando Timbre</div>
-      <div class="tab" data-tab="publish">Enviar Mensaje</div>
+      <div class="tab" data-tab="waiting">Esperando Timbre</div>
+      <div class="tab active" data-tab="chat">Chat</div>
     </div>
   </div>
   
-  <div id="waiting-tab-content" class="tab-content active">
+  <div id="waiting-tab-content" class="tab-content">
     <div class="waiting-section">
       <div class="status-indicator" id="mqtt-status">Conectando al servidor...</div>
       
@@ -424,22 +634,42 @@
     </div>
   </div>
   
-  <div id="publish-tab-content" class="tab-content">
-    <div class="publish-form">
-      <div class="form-group">
-        <label for="topic-input">Tema (Topic)</label>
-        <input type="text" id="topic-input" value="casa/timbre" placeholder="Ingrese el tema MQTT">
+  <div id="chat-tab-content" class="tab-content active">
+    <div class="chat-container">
+      <!-- Menú lateral -->
+      <div class="chat-sidebar">
+        <h3>Contactos</h3>
+        <div class="contact-list">
+          <div class="contact-item active" data-contact="Albert">
+            <span class="contact-name">Albert</span>
+            <span class="unread-count" id="unread-Albert">0</span>
+          </div>
+          <div class="contact-item" data-contact="Ale">
+            <span class="contact-name">Ale</span>
+            <span class="unread-count" id="unread-Ale">0</span>
+          </div>
+          <div class="contact-item" data-contact="Mama">
+            <span class="contact-name">Mama</span>
+            <span class="unread-count" id="unread-Mama">0</span>
+          </div>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="message-input">Mensaje</label>
-        <textarea id="message-input" placeholder="Ingrese el mensaje a publicar"></textarea>
-      </div>
-      
-      <button id="publish-btn">Publicar Mensaje</button>
-      
-      <div id="publish-success" class="success-message">
-        ¡Mensaje publicado exitosamente!
+
+      <!-- Área de chat -->
+      <div class="chat-main">
+        <div class="chat-header">
+          <h3 id="current-chat-name">Albert</h3>
+          <span class="connection-status" id="chat-connection-status">Desconectado</span>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+          <!-- Los mensajes aparecerán aquí -->
+        </div>
+
+        <div class="chat-input">
+          <input type="text" id="chat-message-input" placeholder="Escribe un mensaje..." maxlength="200">
+          <button id="chat-send-btn" disabled>Enviar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -456,13 +686,14 @@
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
     const mqttStatus = document.getElementById('mqtt-status');
-    const publishBtn = document.getElementById('publish-btn');
-    const topicInput = document.getElementById('topic-input');
-    const messageInput = document.getElementById('message-input');
-    const publishSuccess = document.getElementById('publish-success');
     const doorbellAlert = document.getElementById('doorbell-alert');
     const doorbellMessage = document.getElementById('doorbell-message');
     const dismissBtn = document.getElementById('dismiss-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatMessageInput = document.getElementById('chat-message-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const currentChatName = document.getElementById('current-chat-name');
+    const chatConnectionStatus = document.getElementById('chat-connection-status');
     
     // Check system dark mode preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -514,29 +745,300 @@
       }
     });
     
-    // Publish Button Click
-    publishBtn.addEventListener('click', () => {
-      const topic = topicInput.value.trim();
-      const message = messageInput.value.trim();
+    // Doorbell Alert Listener
+    window.mqttAPI.onDoorbellAlert((message) => {
+      // Detener cualquier sonido previo y reiniciar
+      stopAlertSound();
       
-      if (!topic || !message) {
-        alert('Por favor ingrese tanto el tema como el mensaje');
+      // Show the alert
+      doorbellAlert.style.display = 'flex';
+      
+      // Set message if available
+      if (message && message !== 'on' && message !== '1') {
+        doorbellMessage.textContent = message;
+      } else {
+        doorbellMessage.textContent = 'Alguien está en la puerta';
+      }
+      
+      // Play notification sound
+      playAlertSound();
+    });
+    
+    // Dismiss button
+    dismissBtn.addEventListener('click', () => {
+      doorbellAlert.style.display = 'none';
+      stopAlertSound();
+    });
+    
+    // Chat functionality
+    let currentChatContact = 'Albert';
+    let chatHistory = {
+      Albert: [],
+      Ale: [],
+      Mama: []
+    };
+    
+    // Load chat history from localStorage on startup
+    function loadChatHistoryFromStorage() {
+      try {
+        const saved = localStorage.getItem('espbell-chat-history');
+        if (saved) {
+          const parsedHistory = JSON.parse(saved);
+          // Convert timestamp strings back to Date objects
+          Object.keys(parsedHistory).forEach(contact => {
+            parsedHistory[contact].forEach(msg => {
+              msg.timestamp = new Date(msg.timestamp);
+            });
+          });
+          chatHistory = { ...chatHistory, ...parsedHistory };
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    }
+    
+    // Save chat history to localStorage
+    function saveChatHistoryToStorage() {
+      try {
+        localStorage.setItem('espbell-chat-history', JSON.stringify(chatHistory));
+      } catch (error) {
+        console.error('Error saving chat history:', error);
+      }
+    }
+    
+    // Initialize chat history on page load
+    loadChatHistoryFromStorage();
+    
+    // Load initial chat for Albert
+    setTimeout(() => {
+      loadChatHistory(currentChatContact);
+    }, 100);
+    
+    // Contact selection
+    document.querySelectorAll('.contact-item').forEach(contact => {
+      contact.addEventListener('click', function() {
+        // Remove active class from all contacts
+        document.querySelectorAll('.contact-item').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked contact
+        this.classList.add('active');
+        
+        // Update current chat
+        currentChatContact = this.dataset.contact;
+        currentChatName.textContent = currentChatContact;
+        
+        // Clear unread count
+        const unreadElement = document.getElementById(`unread-${currentChatContact}`);
+        unreadElement.textContent = '0';
+        unreadElement.classList.remove('show');
+        
+        // Load chat history
+        loadChatHistory(currentChatContact);
+      });
+    });
+    
+    // Enable/disable send button based on input
+    chatMessageInput.addEventListener('input', () => {
+      const hasText = chatMessageInput.value.trim().length > 0;
+      const isConnected = chatConnectionStatus.classList.contains('connected');
+      chatSendBtn.disabled = !(hasText && isConnected);
+    });
+    
+    // Send message on Enter key
+    chatMessageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !chatSendBtn.disabled) {
+        sendChatMessage();
+      }
+    });
+    
+    // Chat message send button
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    
+    function sendChatMessage() {
+      const message = chatMessageInput.value.trim();
+      
+      if (!message) {
         return;
       }
       
+      // Create unique header with timestamp to identify messages from this app
+      const timestamp = Date.now();
+      const messageWithHeader = `[ESPBELL_APP_${timestamp}]:${message}`;
+      
+      // Send message via MQTT with header
       window.mqttAPI.publish({
-        topic: topic,
-        message: message
+        topic: `casa/chat/${currentChatContact}`,
+        message: messageWithHeader
       });
       
-      // Show success message and hide after 3 seconds
-      publishSuccess.style.display = 'block';
-      setTimeout(() => {
-        publishSuccess.style.display = 'none';
-      }, 3000);
+      // Add message to chat history and display (without header)
+      const messageData = {
+        type: 'sent',
+        message: message,
+        timestamp: new Date()
+      };
       
-      // Clear message input
-      messageInput.value = '';
+      chatHistory[currentChatContact].push(messageData);
+      addMessageToChat(messageData);
+      saveChatHistoryToStorage();
+      
+      // Clear input
+      chatMessageInput.value = '';
+      chatSendBtn.disabled = true;
+    }
+    
+    function addMessageToChat(messageData) {
+      const messageElement = document.createElement('div');
+      messageElement.className = `message ${messageData.type}`;
+      
+      const messageText = document.createElement('div');
+      messageText.textContent = messageData.message;
+      
+      const messageTime = document.createElement('div');
+      messageTime.className = 'message-time';
+      messageTime.textContent = formatTime(messageData.timestamp);
+      
+      messageElement.appendChild(messageText);
+      messageElement.appendChild(messageTime);
+      
+      // Append message to chat
+      chatMessages.appendChild(messageElement);
+      
+      // Scroll to bottom with smooth animation
+      requestAnimationFrame(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+    
+    function loadChatHistory(contact) {
+      // Clear current messages
+      chatMessages.innerHTML = '';
+      
+      // Load messages for the selected contact
+      if (chatHistory[contact] && chatHistory[contact].length > 0) {
+        chatHistory[contact].forEach(messageData => {
+          addMessageToChat(messageData);
+        });
+      } else {
+        // Show welcome message if no chat history
+        const welcomeMsg = document.createElement('div');
+        welcomeMsg.className = 'welcome-message';
+        welcomeMsg.textContent = `Inicia una conversación con ${contact}`;
+        welcomeMsg.style.cssText = `
+          text-align: center;
+          color: var(--apple-text-secondary);
+          font-style: italic;
+          padding: 20px;
+          opacity: 0.7;
+        `;
+        chatMessages.appendChild(welcomeMsg);
+      }
+    }
+    
+    function formatTime(date) {
+      return date.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    function updateUnreadCount(contact) {
+      if (contact !== currentChatContact) {
+        const unreadElement = document.getElementById(`unread-${contact}`);
+        let count = parseInt(unreadElement.textContent) || 0;
+        count++;
+        unreadElement.textContent = count.toString();
+        unreadElement.classList.add('show');
+        
+        // Play chat notification sound
+        playChatNotificationSound();
+        
+        // Show browser notification if supported
+        showChatNotification(contact);
+      }
+    }
+    
+    // Chat notification sound (different from doorbell)
+    function playChatNotificationSound() {
+      try {
+        // Create a short, gentle notification sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (error) {
+        console.log('Could not play chat notification sound:', error);
+      }
+    }
+    
+    // Show browser notification for chat messages
+    function showChatNotification(contact) {
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification(`Nuevo mensaje de ${contact}`, {
+            body: 'Tienes un nuevo mensaje en EspBell Chat',
+            icon: './public/icon.png',
+            tag: 'espbell-chat'
+          });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              showChatNotification(contact);
+            }
+          });
+        }
+      }
+    }
+    
+    // Update chat connection status based on main MQTT status
+    window.mqttAPI.onStatusChange((status, message) => {
+      // Update main status
+      mqttStatus.className = 'status-indicator';
+      
+      // Update chat connection status
+      chatConnectionStatus.className = 'connection-status';
+      
+      switch (status) {
+        case 'connected':
+          mqttStatus.textContent = 'Conectado al servidor';
+          mqttStatus.classList.add('connected');
+          chatConnectionStatus.textContent = 'Conectado';
+          chatConnectionStatus.classList.add('connected');
+          // Enable send button if there's text in input
+          chatSendBtn.disabled = !chatMessageInput.value.trim();
+          break;
+        case 'disconnected':
+          mqttStatus.textContent = 'Desconectado del servidor';
+          chatConnectionStatus.textContent = 'Desconectado';
+          chatSendBtn.disabled = true;
+          break;
+        case 'reconnecting':
+          mqttStatus.textContent = 'Reconectando...';
+          chatConnectionStatus.textContent = 'Reconectando...';
+          chatSendBtn.disabled = true;
+          break;
+        case 'error':
+          mqttStatus.textContent = `Error: ${message || 'Desconocido'}`;
+          mqttStatus.classList.add('error');
+          chatConnectionStatus.textContent = 'Error';
+          chatSendBtn.disabled = true;
+          break;
+        default:
+          mqttStatus.textContent = 'Estado desconocido';
+          chatConnectionStatus.textContent = 'Desconocido';
+          chatSendBtn.disabled = true;
+      }
     });
     
     // Doorbell Alert Listener
@@ -587,7 +1089,7 @@
       }
     }
     
-    // También escuchar mensajes en el topic casa/timbre
+    // También escuchar mensajes en el topic casa/timbre y chat
     window.mqttAPI.onMessage((data) => {
       if (data.topic === 'casa/timbre') {
         // Detener cualquier sonido previo y reiniciar
@@ -605,8 +1107,92 @@
         
         // Play notification sound
         playAlertSound();
+      } else if (data.topic.startsWith('casa/chat/')) {
+        // Handle chat messages
+        const contact = data.topic.split('/')[2]; // Extract contact name from topic
+        
+        if (['Albert', 'Ale', 'Mama'].includes(contact)) {
+          // Check if message is from this app (has our unique header)
+          if (data.message.startsWith('[ESPBELL_APP_') && data.message.includes(']:')) {
+            // This is a message sent from this app, ignore it
+            console.log('Ignorando mensaje propio:', data.message);
+            return;
+          }
+          
+          // Process message content - handle Telegram format [TELEGRAM_@JoyaAP]:message
+          let messageContent = data.message;
+          if (data.message.startsWith('[TELEGRAM_@') && data.message.includes(']:')) {
+            // Extract content after the colon for Telegram messages
+            const colonIndex = data.message.indexOf(']:');
+            if (colonIndex !== -1) {
+              messageContent = data.message.substring(colonIndex + 2);
+            }
+          }
+          
+          // This is a received message from external source
+          const messageData = {
+            type: 'received',
+            message: messageContent,
+            timestamp: new Date()
+          };
+          
+          console.log('Mensaje recibido de', contact + ':', messageContent);
+          
+          chatHistory[contact].push(messageData);
+          saveChatHistoryToStorage();
+          
+          // If this is the current chat, display the message
+          if (contact === currentChatContact) {
+            addMessageToChat(messageData);
+          } else {
+            // Update unread count and show notification
+            updateUnreadCount(contact);
+          }
+        }
       }
     });
+    
+    // Debug function to simulate external messages (for testing)
+    window.simulateExternalMessage = function(contact, message) {
+      // Simulate receiving a message from external source (without header)
+      const fakeData = {
+        topic: `casa/chat/${contact}`,
+        message: message
+      };
+      
+      // Process message content - handle Telegram format [TELEGRAM_@JoyaAP]:message
+      let messageContent = message;
+      if (message.startsWith('[TELEGRAM_@') && message.includes(']:')) {
+        // Extract content after the colon for Telegram messages
+        const colonIndex = message.indexOf(']:');
+        if (colonIndex !== -1) {
+          messageContent = message.substring(colonIndex + 2);
+        }
+      }
+      
+      // Process as if it came from MQTT
+      if (['Albert', 'Ale', 'Mama'].includes(contact)) {
+        const messageData = {
+          type: 'received',
+          message: messageContent,
+          timestamp: new Date()
+        };
+        
+        chatHistory[contact].push(messageData);
+        saveChatHistoryToStorage();
+        
+        if (contact === currentChatContact) {
+          addMessageToChat(messageData);
+        } else {
+          updateUnreadCount(contact);
+        }
+      }
+    };
+    
+    // Debug info
+    console.log('EspBell Chat inicializado. Para probar mensajes externos usar:');
+    console.log('simulateExternalMessage("Albert", "Hola desde el exterior")');
+    console.log('simulateExternalMessage("Albert", "[TELEGRAM_@JoyaAP]:Mensaje desde Telegram")');
     
     // Listen for theme changes from the main process
     window.themeAPI.onThemeChanged((themeData) => {

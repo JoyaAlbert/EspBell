@@ -150,6 +150,18 @@ app.whenReady().then(async () => {
             .catch(err => {
               console.error(`Error al suscribirse a casa/timbre:`, err);
             });
+          
+          // Suscribirse a los topics de chat
+          const chatTopics = ['casa/chat/Albert', 'casa/chat/Ale', 'casa/chat/Mama'];
+          chatTopics.forEach(topic => {
+            mqttManager.subscribe(topic)
+              .then(subscribedTopic => {
+                console.log(`Suscrito a ${subscribedTopic}`);
+              })
+              .catch(err => {
+                console.error(`Error al suscribirse a ${topic}:`, err);
+              });
+          });
         }
       });
       
@@ -178,6 +190,9 @@ app.whenReady().then(async () => {
               mainWindow.setAlwaysOnTop(false);
             }, 3000);
           }
+          
+          // Si es un mensaje de chat, solo enviarlo como mensaje regular
+          // El renderizador se encargará de manejarlo apropiadamente
         }
       });
       
