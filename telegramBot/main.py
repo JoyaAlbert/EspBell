@@ -3,6 +3,7 @@ import requests
 import paho.mqtt.client as mqtt
 import time
 import json
+from datetime import datetime, time as dt_time
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -15,6 +16,10 @@ MQTT_PORT = int(os.getenv('MQTT_PORT', 1883))
 # Configuración de reconexión
 RECONNECT_DELAY = int(os.getenv('RECONNECT_DELAY', 5))
 MAX_RECONNECT_ATTEMPTS = int(os.getenv('MAX_RECONNECT_ATTEMPTS', 0))
+
+# Configuración de horarios de funcionamiento
+HORA_INICIO = dt_time(8, 0)  # 8:00 AM
+HORA_FIN = dt_time(23, 0)    # 11:00 PM
 
 # Usuarios disponibles
 USUARIOS_DISPONIBLES = ["Albert", "Ale", "Mama"]
@@ -222,11 +227,43 @@ def on_disconnect(client, userdata, rc):
     else:
         print("Desconectado del broker MQTT (desconexión limpia)")
 
+def is_horario_activo():
+    """Verifica si estamos en el horario de funcionamiento del bot"""
+    ahora = datetime.now().time()
+    return HORA_INICIO <= ahora <= HORA_FIN
+
+def tiempo_hasta_activacion():
+    """Calcula cuántos segundos faltan hasta la próxima activación"""
+    ahora = datetime.now()
+    mañana_8am = ahora.replace(hour=8, minute=0, second=0, microsecond=0)
+    
+    # Si ya pasó las 8 AM hoy, programar para mañana
+    if ahora.time() > HORA_INICIO:
+        mañana_8am = mañana_8am.replace(day=mañana_8am.day + 1)
+    
+    tiempo_espera = (mañana_8am - ahora).total_seconds()
+    return max(0, tiempo_espera)
+
 def main():
     """Función principal"""
     global usuarios_por_chat, chats_esperando_seleccion
     
     print("Iniciando bot de Telegram con MQTT para múltiples usuarios...")
+    print(f"Horario de funcionamiento: {HORA_INICIO.strftime('%H:%M')} - {HORA_FIN.strftime('%H:%M')}")
+    
+    # Verificar si estamos en horario activo
+    if not is_horario_activo():
+        tiempo_espera = tiempo_hasta_activacion()
+        horas = int(tiempo_espera // 3600)
+        minutos = int((tiempo_espera % 3600) // 60)
+        print(f"⏰ Fuera del horario de funcionamiento. Esperando {horas}h {minutos}m hasta las 8:00 AM...")
+        
+        # Notificar a usuarios si los hay que el bot está en modo nocturno
+        if usuarios_por_chat:
+            send_telegram_message("🌙 Bot en modo nocturno. Funcionará de 8:00 AM a 11:00 PM")
+        
+        time.sleep(tiempo_espera)
+        print("🌅 ¡Hora de activarse! Iniciando bot...")
     
     # Crear cliente MQTT con configuración de reconexión automática
     client = mqtt.Client()
@@ -266,6 +303,31 @@ def main():
                 last_update_id = 0
                 
                 while conexion_establecida:
+                    # Verificar si estamos fuera del horario de funcionamiento
+                    if not is_horario_activo():
+                        print("🌙 Fuera del horario de funcionamiento. Deteniendo bot hasta mañana...")
+                        if usuarios_por_chat:
+                            send_telegram_message("🌙 Bot entrando en modo nocturno. Volveré a las 8:00 AM. ¡Buenas noches!")
+                        
+                        try:
+                            client.loop_stop()
+                            client.disconnect()
+                        except:
+                            pass
+                        
+                        # Calcular tiempo hasta próxima activación
+                        tiempo_espera = tiempo_hasta_activacion()
+                        horas = int(tiempo_espera // 3600)
+                        minutos = int((tiempo_espera % 3600) // 60)
+                        print(f"⏰ Esperando {horas}h {minutos}m hasta las 8:00 AM...")
+                        
+                        time.sleep(tiempo_espera)
+                        print("🌅 ¡Buenos días! Reactivando bot...")
+                        
+                        # Reiniciar conexión
+                        conexion_establecida = False
+                        break
+                    
                     try:
                         # Obtener actualizaciones de Telegram
                         updates = get_telegram_updates(offset=last_update_id + 1 if last_update_id > 0 else None)

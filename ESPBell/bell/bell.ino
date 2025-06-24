@@ -114,13 +114,13 @@ void setup() {
   pinMode(sensorPin, INPUT);
   pinMode(ledPin, OUTPUT);
   
-  // Iniciar con el LED apagado para indicar que se está configurando (invertimos lógica)
+  // Iniciar con el LED apagado para indicar que se está configurando
   digitalWrite(ledPin, HIGH);  // LED apagado
   
   Serial.begin(115200);
   delay(1000); // Esperar a que se inicialice la comunicación serial
   
-  Serial.println("\n\n=== ESP32 Bell System (Optimizado) ===");
+  Serial.println("\n\n=== ESP32 Bell System ===");
   Serial.println("Iniciando...");
   
   setup_wifi();
@@ -133,27 +133,20 @@ void setup() {
   // Configurar interrupción para el pin del sensor
   attachInterrupt(digitalPinToInterrupt(sensorPin), handleBellPress, RISING);
   
-  // Configurar WiFi para modo de bajo consumo
-  WiFi.setSleep(true);
-  
-  Serial.println("Sistema listo - Modo bajo consumo activado");
+  Serial.println("Sistema listo - WiFi siempre conectado");
 }
 
 void loop() {
-  // Verificar si se detectó el timbre (alta prioridad para respuesta inmediata)
+  // Verificar si se detectó el timbre
   if (bellPressed) {
     bellPressed = false; // Resetear la bandera
     
     Serial.println("¡Timbre detectado!");
     
-    // Despertar WiFi si está en modo sleep para envío inmediato
-    WiFi.setSleep(false);
-    delay(10); // Pequeña pausa para estabilizar WiFi
-    
     // Enviar mensaje inmediatamente
     if (mqttClient.publish(mqtt_topic, "RING", false)) {
       Serial.println("Mensaje enviado al broker MQTT");
-      // Parpadear LED brevemente
+      // Parpadear LED brevemente para confirmar envío
       digitalWrite(ledPin, HIGH);
       delay(100);
       digitalWrite(ledPin, LOW);
@@ -163,18 +156,11 @@ void loop() {
       // Intentar enviar nuevamente después de reconectar
       mqttClient.publish(mqtt_topic, "RING", false);
     }
-    
-    // Volver a activar el modo de bajo consumo
-    WiFi.setSleep(true);
   }
   
-  // Verificar conexiones solo cada 2 minutos para ahorrar energía
+  // Verificar conexiones cada 2 minutos
   if (millis() - lastConnectionCheck > connectionCheckInterval) {
     lastConnectionCheck = millis();
-    
-    // Despertar WiFi temporalmente para verificar conexión
-    WiFi.setSleep(false);
-    delay(10);
     
     // Verificar la conexión WiFi
     if (WiFi.status() != WL_CONNECTED) {
@@ -184,7 +170,7 @@ void loop() {
       delay(2000);
       connectMQTT();
     } else {
-      // Verificar MQTT con un heartbeat ligero
+      // Verificar MQTT con un heartbeat
       if (!mqttClient.publish("casa/heartbeat", "ok", false)) {
         Serial.println("Conexión MQTT perdida. Reconectando...");
         digitalWrite(ledPin, HIGH);
@@ -193,14 +179,11 @@ void loop() {
         Serial.println("Conexiones activas");
       }
     }
-    
-    // Volver al modo de bajo consumo
-    WiFi.setSleep(true);
   }
   
-  // Procesar mensajes MQTT brevemente
+  // Procesar mensajes MQTT
   mqttClient.loop();
   
-  // Pausa más larga para ahorrar energía (la interrupción despertará al ESP32)
+  // Pausa corta
   delay(100);
 }
