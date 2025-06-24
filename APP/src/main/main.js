@@ -71,6 +71,39 @@ function compareVersions(v1, v2) {
   return 0; // Versiones iguales
 }
 
+// Función para mostrar y enfocar la ventana
+function showAndFocusWindow() {
+  if (!mainWindow) return;
+  
+  // Mostrar la ventana si está oculta
+  if (!mainWindow.isVisible()) {
+    mainWindow.show();
+  }
+  
+  // Restaurar si está minimizada
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  
+  // Enfocar la ventana
+  if (!mainWindow.isFocused()) {
+    mainWindow.focus();
+  }
+  
+  // En algunos sistemas operativos, forzar que la ventana esté en primer plano
+  mainWindow.setAlwaysOnTop(true);
+  
+  // Después de un breve momento, desactivar always on top
+  setTimeout(() => {
+    if (mainWindow) {
+      mainWindow.setAlwaysOnTop(false);
+    }
+  }, 2000);
+  
+  // Solicitar atención del usuario (parpadeo en la barra de tareas)
+  mainWindow.flashFrame(true);
+}
+
 function createWindow() {
   // Crear la ventana del navegador.
   mainWindow = new BrowserWindow(MAIN_WINDOW_CONFIG);
@@ -177,22 +210,23 @@ app.whenReady().then(async () => {
             mainWindow.webContents.send('doorbell-alert', message.toString());
             
             // Mostrar y enfocar la ventana
-            if (!mainWindow.isVisible()) {
-              mainWindow.show();
-            }
-            if (!mainWindow.isFocused()) {
-              mainWindow.focus();
-            }
-            // En algunos sistemas operativos, forzar que la ventana esté en primer plano
-            mainWindow.setAlwaysOnTop(true);
-            // Después de un breve momento, desactivar always on top
-            setTimeout(() => {
-              mainWindow.setAlwaysOnTop(false);
-            }, 3000);
+            showAndFocusWindow();
           }
           
-          // Si es un mensaje de chat, solo enviarlo como mensaje regular
-          // El renderizador se encargará de manejarlo apropiadamente
+          // Si es un mensaje de chat, también mostrar la ventana
+          if (topic.startsWith('casa/chat/')) {
+            console.log(`Mensaje de chat recibido en ${topic}: ${message.toString()}`);
+            
+            // Mostrar y enfocar la ventana cuando llegue un mensaje de chat
+            showAndFocusWindow();
+            
+            // Enviar evento específico de chat para notificación
+            mainWindow.webContents.send('chat-message-received', {
+              topic: topic,
+              message: message.toString(),
+              user: topic.split('/').pop() // Extraer el nombre del usuario del topic
+            });
+          }
         }
       });
       

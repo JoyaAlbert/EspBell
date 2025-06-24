@@ -15,11 +15,15 @@ contextBridge.exposeInMainWorld('mqttAPI', {
   onStatusChange: (callback) => ipcRenderer.on('mqtt-status', (event, status, message) => callback(status, message)),
   onDoorbellAlert: (callback) => ipcRenderer.on('doorbell-alert', (event, message) => callback(message)),
   
+  // Escuchar mensajes de chat específicos (para notificaciones de ventana)
+  onChatMessageReceived: (callback) => ipcRenderer.on('chat-message-received', (event, data) => callback(data)),
+  
   // Limpiar los listeners al cerrar la ventana para evitar fugas de memoria
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('mqtt-message');
     ipcRenderer.removeAllListeners('mqtt-status');
     ipcRenderer.removeAllListeners('doorbell-alert');
+    ipcRenderer.removeAllListeners('chat-message-received');
   }
 });
 

@@ -1152,6 +1152,20 @@
       }
     });
     
+    // Escuchar eventos específicos de mensajes de chat para mostrar la ventana
+    window.mqttAPI.onChatMessageReceived((data) => {
+      console.log('🔔 Mensaje de chat recibido, la ventana ya debería estar visible');
+      
+      // Reproducir sonido de notificación de chat (más suave que el timbre)
+      playChatNotificationSound();
+      
+      // Mostrar notificación del navegador si está disponible
+      const contact = data.user;
+      if (contact && contact !== currentChatContact) {
+        showChatNotification(contact);
+      }
+    });
+    
     // Debug function to simulate external messages (for testing)
     window.simulateExternalMessage = function(contact, message) {
       // Simulate receiving a message from external source (without header)
