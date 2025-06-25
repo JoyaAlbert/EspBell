@@ -24,9 +24,9 @@ MAX_RECONNECT_ATTEMPTS = int(os.getenv('MAX_RECONNECT_ATTEMPTS', 0))
 NOTIFY_CONNECTION_ISSUES = os.getenv('NOTIFY_CONNECTION_ISSUES', 'false').lower() == 'true'
 
 # Configuración del servidor de imágenes
-IMAGE_SERVER_PORT = int(os.getenv('IMAGE_SERVER_PORT', 8080))
+IMAGE_SERVER_PORT = int(os.getenv('IMAGE_SERVER_PORT', 8900))
 IMAGES_FOLDER = os.getenv('IMAGES_FOLDER', './images')
-SERVER_BASE_URL = os.getenv('SERVER_BASE_URL', f'http://localhost:{IMAGE_SERVER_PORT}')
+SERVER_BASE_URL = os.getenv('SERVER_BASE_URL', f'http://192.168.1.61:{IMAGE_SERVER_PORT}')
 
 # Configuración de horarios de funcionamiento
 HORA_INICIO = dt_time(8, 0)  # 8:00 AM
