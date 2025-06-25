@@ -3,8 +3,11 @@ import requests
 import paho.mqtt.client as mqtt
 import time
 import json
+import uuid
+import threading
 from datetime import datetime, time as dt_time
 from dotenv import load_dotenv
+from image_server import start_image_server
 
 # Cargar variables de entorno
 load_dotenv()
@@ -20,6 +23,11 @@ MAX_RECONNECT_ATTEMPTS = int(os.getenv('MAX_RECONNECT_ATTEMPTS', 0))
 # Configuración de notificaciones (desactivadas por defecto)
 NOTIFY_CONNECTION_ISSUES = os.getenv('NOTIFY_CONNECTION_ISSUES', 'false').lower() == 'true'
 
+# Configuración del servidor de imágenes
+IMAGE_SERVER_PORT = int(os.getenv('IMAGE_SERVER_PORT', 8080))
+IMAGES_FOLDER = os.getenv('IMAGES_FOLDER', './images')
+SERVER_BASE_URL = os.getenv('SERVER_BASE_URL', f'http://localhost:{IMAGE_SERVER_PORT}')
+
 # Configuración de horarios de funcionamiento
 HORA_INICIO = dt_time(8, 0)  # 8:00 AM
 HORA_FIN = dt_time(23, 0)    # 11:00 PM
@@ -31,6 +39,67 @@ USUARIOS_DISPONIBLES = ["Albert", "Ale", "Mama"]
 reconnect_count = 0
 usuarios_por_chat = {}  # {chat_id: "Albert", chat_id2: "Mama"}
 chats_esperando_seleccion = set()  # Set de chat_ids que están esperando selección
+
+def create_images_folder():
+    """Crear la carpeta de imágenes si no existe"""
+    if not os.path.exists(IMAGES_FOLDER):
+        os.makedirs(IMAGES_FOLDER)
+        print(f"📁 Carpeta de imágenes creada: {IMAGES_FOLDER}")
+
+def download_telegram_image(file_id, chat_id, username):
+    """Descargar una imagen de Telegram y guardarla localmente"""
+    try:
+        # Obtener información del archivo
+        file_url = f'https://api.telegram.org/bot{TOKEN}/getFile?file_id={file_id}'
+        file_response = requests.get(file_url)
+        
+        if file_response.status_code != 200:
+            print(f"❌ Error obteniendo información del archivo: {file_response.status_code}")
+            return None
+        
+        file_data = file_response.json()
+        if not file_data.get('ok'):
+            print(f"❌ Error en respuesta de getFile: {file_data}")
+            return None
+        
+        file_path = file_data['result']['file_path']
+        
+        # Descargar el archivo
+        download_url = f'https://api.telegram.org/file/bot{TOKEN}/{file_path}'
+        image_response = requests.get(download_url)
+        
+        if image_response.status_code != 200:
+            print(f"❌ Error descargando imagen: {image_response.status_code}")
+            return None
+        
+        # Crear carpeta si no existe
+        create_images_folder()
+        
+        # Generar nombre único para la imagen
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        file_extension = file_path.split('.')[-1] if '.' in file_path else 'jpg'
+        filename = f"{username}_{timestamp}_{uuid.uuid4().hex[:8]}.{file_extension}"
+        
+        # Guardar la imagen
+        local_path = os.path.join(IMAGES_FOLDER, filename)
+        with open(local_path, 'wb') as f:
+            f.write(image_response.content)
+        
+        # Crear URL local
+        image_url = f"{SERVER_BASE_URL}/image/{filename}"
+        
+        print(f"📸 Imagen guardada: {filename}")
+        print(f"🔗 URL local: {image_url}")
+        
+        return {
+            'filename': filename,
+            'url': image_url,
+            'local_path': local_path
+        }
+        
+    except Exception as e:
+        print(f"❌ Error descargando imagen: {e}")
+        return None
 
 def send_telegram_message(message, chat_id=None, reply_markup=None):
     """Envía un mensaje al bot de Telegram"""
@@ -262,6 +331,13 @@ def main():
     print("Iniciando bot de Telegram con MQTT para múltiples usuarios...")
     print(f"Horario de funcionamiento: {HORA_INICIO.strftime('%H:%M')} - {HORA_FIN.strftime('%H:%M')}")
     
+    # Iniciar servidor de imágenes en un hilo separado
+    print("🖼️ Iniciando servidor de imágenes...")
+    image_server_thread = threading.Thread(target=start_image_server, daemon=True)
+    image_server_thread.start()
+    time.sleep(2)  # Dar tiempo al servidor para iniciar
+    print(f"✅ Servidor de imágenes iniciado en {SERVER_BASE_URL}")
+    
     # Verificar si estamos en horario activo
     if not is_horario_activo():
         tiempo_espera = tiempo_hasta_activacion()
@@ -347,35 +423,80 @@ def main():
                             for update in updates['result']:
                                 last_update_id = max(last_update_id, update['update_id'])
                                 
-                                # Procesar mensajes de texto (nuevos usuarios)
+                                # Procesar mensajes (texto e imágenes)
                                 if 'message' in update:
                                     chat_id = str(update['message']['chat']['id'])
-                                    text = update['message'].get('text', '')
-                                    user_info = update['message']['from']
+                                    message = update['message']
+                                    text = message.get('text', '')
+                                    user_info = message['from']
                                     username = user_info.get('username', user_info.get('first_name', 'Usuario'))
                                     
-                                    print(f"Mensaje de @{username} (chat {chat_id}): {text}")
+                                    # Verificar si el usuario ya está configurado
+                                    usuario_configurado = chat_id in usuarios_por_chat
                                     
-                                    # Si es un comando /start o es un chat nuevo, preguntar por usuario
-                                    if text.startswith('/start') or chat_id not in usuarios_por_chat:
-                                        print(f"Nuevo usuario @{username} en chat {chat_id}")
-                                        send_telegram_message("🤖 ¡Bienvenido al sistema de chat familiar!", chat_id)
-                                        ask_for_user_selection(chat_id)
-                                    elif text.startswith('/reset'):
-                                        # Permitir cambiar la selección
-                                        if chat_id in usuarios_por_chat:
-                                            del usuarios_por_chat[chat_id]
-                                        ask_for_user_selection(chat_id)
-                                    elif text.startswith('/status'):
-                                        # Mostrar estado actual
-                                        if chat_id in usuarios_por_chat:
+                                    # Procesar imágenes
+                                    if 'photo' in message and usuario_configurado:
+                                        # Obtener la imagen de mayor resolución
+                                        photo = message['photo'][-1]  # La última es la de mayor resolución
+                                        file_id = photo['file_id']
+                                        
+                                        print(f"📸 Imagen recibida de @{username} (chat {chat_id})")
+                                        
+                                        # Descargar y guardar la imagen
+                                        image_info = download_telegram_image(file_id, chat_id, username)
+                                        
+                                        if image_info:
                                             usuario_actual = usuarios_por_chat[chat_id]
-                                            send_telegram_message(f"📋 Tu usuario actual: **{usuario_actual}**\n\nRecibes mensajes del topic: `casa/chat/{usuario_actual}`\n\nComandos disponibles:\n/reset - Cambiar usuario\n/status - Ver estado\n/help - Mostrar ayuda", chat_id)
+                                            topic_mqtt = f"casa/chat/{usuario_actual}"
+                                            
+                                            # Crear mensaje con la URL de la imagen
+                                            caption = message.get('caption', '')
+                                            if caption:
+                                                mensaje_mqtt = f"[TELEGRAM_@{username}]:📸 {caption}\n🔗 {image_info['url']}"
+                                            else:
+                                                mensaje_mqtt = f"[TELEGRAM_@{username}]:📸 Imagen compartida\n🔗 {image_info['url']}"
+                                            
+                                            try:
+                                                # Publicar mensaje con URL en MQTT
+                                                client.publish(topic_mqtt, mensaje_mqtt)
+                                                print(f"Imagen publicada en MQTT - Topic: {topic_mqtt}")
+                                                
+                                                # Confirmar al usuario que la imagen se envió
+                                                send_telegram_message(
+                                                    f"📸 ¡Imagen enviada correctamente!\n🔗 URL: {image_info['url']}", 
+                                                    chat_id
+                                                )
+                                                
+                                            except Exception as e:
+                                                print(f"Error publicando imagen en MQTT: {e}")
+                                                send_telegram_message(f"❌ Error enviando imagen: {e}", chat_id)
                                         else:
-                                            send_telegram_message("❌ No tienes un usuario seleccionado. Usa /start para comenzar.", chat_id)
-                                    elif text.startswith('/help'):
-                                        # Mostrar ayuda
-                                        help_message = """
+                                            send_telegram_message("❌ Error procesando la imagen. Inténtalo de nuevo.", chat_id)
+                                    
+                                    # Procesar mensajes de texto
+                                    elif text:
+                                        print(f"Mensaje de @{username} (chat {chat_id}): {text}")
+                                        
+                                        # Si es un comando /start o es un chat nuevo, preguntar por usuario
+                                        if text.startswith('/start') or not usuario_configurado:
+                                            print(f"Nuevo usuario @{username} en chat {chat_id}")
+                                            send_telegram_message("🤖 ¡Bienvenido al sistema de chat familiar!", chat_id)
+                                            ask_for_user_selection(chat_id)
+                                        elif text.startswith('/reset'):
+                                            # Permitir cambiar la selección
+                                            if chat_id in usuarios_por_chat:
+                                                del usuarios_por_chat[chat_id]
+                                            ask_for_user_selection(chat_id)
+                                        elif text.startswith('/status'):
+                                            # Mostrar estado actual
+                                            if usuario_configurado:
+                                                usuario_actual = usuarios_por_chat[chat_id]
+                                                send_telegram_message(f"📋 Tu usuario actual: **{usuario_actual}**\n\nRecibes mensajes del topic: `casa/chat/{usuario_actual}`\n\nComandos disponibles:\n/reset - Cambiar usuario\n/status - Ver estado\n/help - Mostrar ayuda", chat_id)
+                                            else:
+                                                send_telegram_message("❌ No tienes un usuario seleccionado. Usa /start para comenzar.", chat_id)
+                                        elif text.startswith('/help'):
+                                            # Mostrar ayuda
+                                            help_message = """
 🤖 **Bot de Chat Familiar - Ayuda**
 
 **Comandos disponibles:**
@@ -387,32 +508,37 @@ def main():
 **¿Cómo funciona?**
 1. Usa /start para seleccionar tu identidad (Albert, Mama o Ale)
 2. Envía mensajes normales y se publicarán en tu topic MQTT
-3. Recibirás mensajes que otros envíen a tu topic
+3. Envía imágenes y se guardarán en el servidor con URL local
+4. Recibirás mensajes que otros envíen a tu topic
 
-**Ejemplo:**
-- Si eres "Albert": tus mensajes van a `casa/chat/Albert`
-- Recibes mensajes que lleguen a `casa/chat/Albert`
+**Ejemplos:**
+- Texto: "Hola familia" → se envía a `casa/chat/Albert`
+- Imagen: Se guarda y envía URL → `http://servidor:8080/image/imagen.jpg`
 
-¡Es así de simple! 🏠💬
+¡Es así de simple! 🏠💬📸
 """
-                                        send_telegram_message(help_message, chat_id)
-                                    else:
-                                        # Si no es un comando y el usuario ya está configurado, publicar en MQTT
-                                        if chat_id in usuarios_por_chat and not text.startswith('/'):
-                                            usuario_actual = usuarios_por_chat[chat_id]
-                                            topic_mqtt = f"casa/chat/{usuario_actual}"
-                                            
-                                            # Formatear el mensaje con prefijo identificador
-                                            mensaje_mqtt = f"[TELEGRAM_@{username}]:{text}"
-                                            
-                                            try:
-                                                # Publicar mensaje en MQTT
-                                                client.publish(topic_mqtt, mensaje_mqtt)
-                                                print(f"Mensaje publicado en MQTT - Topic: {topic_mqtt}, Mensaje: {mensaje_mqtt}")
+                                            send_telegram_message(help_message, chat_id)
+                                        else:
+                                            # Si no es un comando y el usuario ya está configurado, publicar en MQTT
+                                            if usuario_configurado and not text.startswith('/'):
+                                                usuario_actual = usuarios_por_chat[chat_id]
+                                                topic_mqtt = f"casa/chat/{usuario_actual}"
                                                 
-                                            except Exception as e:
-                                                print(f"Error publicando en MQTT: {e}")
-                                                send_telegram_message(f"❌ Error enviando mensaje: {e}", chat_id)
+                                                # Formatear el mensaje con prefijo identificador
+                                                mensaje_mqtt = f"[TELEGRAM_@{username}]:{text}"
+                                                
+                                                try:
+                                                    # Publicar mensaje en MQTT
+                                                    client.publish(topic_mqtt, mensaje_mqtt)
+                                                    print(f"Mensaje publicado en MQTT - Topic: {topic_mqtt}, Mensaje: {mensaje_mqtt}")
+                                                    
+                                                except Exception as e:
+                                                    print(f"Error publicando en MQTT: {e}")
+                                                    send_telegram_message(f"❌ Error enviando mensaje: {e}", chat_id)
+                                    
+                                    # Manejar imágenes de usuarios no configurados
+                                    elif 'photo' in message and not usuario_configurado:
+                                        send_telegram_message("❌ Debes seleccionar tu usuario antes de enviar imágenes. Usa /start para comenzar.", chat_id)
                                 
                                 # Procesar respuestas de botones
                                 if 'callback_query' in update:
