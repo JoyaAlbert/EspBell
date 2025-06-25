@@ -11,3 +11,11 @@ __pycache__/
 venv/
 env/
 .venv/
+
+# Carpeta de imágenes del bot
+images/
+
+# Archivos de proceso y logs
+bot.pid
+bot.log
+*.log
