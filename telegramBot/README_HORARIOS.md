@@ -21,6 +21,25 @@ Crear archivo `.env` con:
 TOKEN=tu_token_de_telegram
 MQTT_BROKER=ip_del_broker
 MQTT_PORT=1883
+
+# Configuración de notificaciones (NUEVO)
+NOTIFY_CONNECTION_ISSUES=false
+```
+
+### 🔕 **Control de Notificaciones MQTT** (NUEVO)
+Por defecto, el bot **NO** envía notificaciones cuando:
+- Se pierde la conexión al broker MQTT
+- Se intenta reconectar al broker
+- Hay errores de conexión
+
+**Para activar estas notificaciones:**
+```env
+NOTIFY_CONNECTION_ISSUES=true
+```
+
+**Para mantenerlas desactivadas (recomendado):**
+```env
+NOTIFY_CONNECTION_ISSUES=false
 ```
 
 ## 🎯 Opciones de Programación Automática

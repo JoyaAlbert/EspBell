@@ -17,6 +17,9 @@ MQTT_PORT = int(os.getenv('MQTT_PORT', 1883))
 RECONNECT_DELAY = int(os.getenv('RECONNECT_DELAY', 5))
 MAX_RECONNECT_ATTEMPTS = int(os.getenv('MAX_RECONNECT_ATTEMPTS', 0))
 
+# Configuración de notificaciones (desactivadas por defecto)
+NOTIFY_CONNECTION_ISSUES = os.getenv('NOTIFY_CONNECTION_ISSUES', 'false').lower() == 'true'
+
 # Configuración de horarios de funcionamiento
 HORA_INICIO = dt_time(8, 0)  # 8:00 AM
 HORA_FIN = dt_time(23, 0)    # 11:00 PM
@@ -142,7 +145,8 @@ def on_connect(client, userdata, flags, rc):
     
     if rc == 0:
         print(f"Conectado al broker MQTT en {MQTT_BROKER}:{MQTT_PORT}")
-        if reconnect_count > 0:
+        # Solo notificar reconexión si está habilitado y hubo intentos previos
+        if NOTIFY_CONNECTION_ISSUES and reconnect_count > 0:
             send_telegram_message(f"🔄 Reconectado al broker MQTT después de {reconnect_count} intentos")
         reconnect_count = 0
         
@@ -153,11 +157,14 @@ def on_connect(client, userdata, flags, rc):
             client.subscribe(topic)
             print(f"Re-suscrito al topic: {topic}")
         
-        if usuarios_suscritos:
+        # Solo notificar reconexión con topics si está habilitado
+        if NOTIFY_CONNECTION_ISSUES and usuarios_suscritos and reconnect_count > 0:
             send_telegram_message(f"🔔 Reconectado y suscrito a topics: {', '.join(f'casa/chat/{u}' for u in usuarios_suscritos)}")
     else:
         print(f"Error conectando al broker: {rc}")
-        send_telegram_message(f"❌ Error conectando al broker MQTT: {rc}")
+        # Solo notificar error si está habilitado
+        if NOTIFY_CONNECTION_ISSUES:
+            send_telegram_message(f"❌ Error conectando al broker MQTT: {rc}")
 
 def on_message(client, userdata, msg):
     """Callback cuando se recibe un mensaje MQTT"""
@@ -202,7 +209,9 @@ def on_disconnect(client, userdata, rc):
     global reconnect_count
     if rc != 0:
         print(f"Desconexión inesperada del broker MQTT. Código: {rc}")
-        send_telegram_message(f"⚠️ Desconectado del broker MQTT. Intentando reconectar...")
+        # Solo notificar desconexión si está habilitado
+        if NOTIFY_CONNECTION_ISSUES:
+            send_telegram_message(f"⚠️ Desconectado del broker MQTT. Intentando reconectar...")
         
         # Intentar reconexión
         while True:
@@ -217,7 +226,9 @@ def on_disconnect(client, userdata, rc):
                 print(f"Error en reconexión #{reconnect_count}: {e}")
                 if MAX_RECONNECT_ATTEMPTS > 0 and reconnect_count >= MAX_RECONNECT_ATTEMPTS:
                     print("Máximo número de intentos de reconexión alcanzado")
-                    send_telegram_message("❌ No se pudo reconectar al broker MQTT")
+                    # Solo notificar fallo si está habilitado
+                    if NOTIFY_CONNECTION_ISSUES:
+                        send_telegram_message("❌ No se pudo reconectar al broker MQTT")
                     break
                 
                 # Aumentar el delay progresivamente (hasta un máximo)
@@ -445,8 +456,8 @@ def main():
                 print(f"Error de conexión MQTT: {e}")
                 conexion_establecida = False
                 
-                # Notificar a usuarios si los hay
-                if usuarios_por_chat:
+                # Solo notificar error de conexión si está habilitado
+                if NOTIFY_CONNECTION_ISSUES and usuarios_por_chat:
                     send_telegram_message(f"⚠️ Error de conexión al broker MQTT: {e}\n🔄 Reintentando en 15 segundos...")
                 
                 try:
