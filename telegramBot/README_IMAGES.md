@@ -9,10 +9,10 @@
 - **Soporte para captions** en las imágenes
 
 ### 🖼️ Servidor HTTP Local
-- **Puerto configurable** (por defecto 8080)
+- **Puerto configurable** (por defecto 8900)
 - **Acceso privado** - solo en la red local
-- **URLs del formato**: `http://servidor:8080/image/filename.jpg`
-- **Endpoint de estado**: `http://servidor:8080/status`
+- **URLs del formato**: `http://192.168.1.61:8900/image/filename.jpg`
+- **Endpoint de estado**: `http://192.168.1.61:8900/status`
 
 ### 🗑️ Limpieza Automática
 - **Elimina imágenes automáticamente** después de 24 horas
@@ -24,10 +24,10 @@
 ### Variables de Entorno (.env)
 ```bash
 # Configuración del servidor de imágenes
-IMAGE_SERVER_PORT=8080
+IMAGE_SERVER_PORT=8900
 IMAGE_SERVER_HOST=0.0.0.0
 IMAGES_FOLDER=./images
-SERVER_BASE_URL=http://192.168.1.210:8080
+SERVER_BASE_URL=http://192.168.1.61:8900
 ```
 
 ### Dependencias Nuevas
@@ -59,11 +59,11 @@ threading
 ```
 # Imagen sin caption
 [TELEGRAM_@usuario]:📸 Imagen compartida
-🔗 http://servidor:8080/image/usuario_20240625_143022_abc123.jpg
+🔗 http://192.168.1.61:8900/image/usuario_20240625_143022_abc123.jpg
 
 # Imagen con caption
 [TELEGRAM_@usuario]:📸 ¡Mira esta foto!
-🔗 http://servidor:8080/image/usuario_20240625_143022_abc123.jpg
+🔗 http://192.168.1.61:8900/image/usuario_20240625_143022_abc123.jpg
 ```
 
 ## 🔧 Arquitectura

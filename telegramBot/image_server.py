@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuración del servidor
-IMAGE_SERVER_PORT = int(os.getenv('IMAGE_SERVER_PORT', 8080))
+IMAGE_SERVER_PORT = int(os.getenv('IMAGE_SERVER_PORT', 8900))
 IMAGE_SERVER_HOST = os.getenv('IMAGE_SERVER_HOST', '0.0.0.0')
 IMAGES_FOLDER = os.getenv('IMAGES_FOLDER', './images')
 

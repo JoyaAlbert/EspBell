@@ -51,7 +51,7 @@ case "$1" in
         if ps -p $(cat "$PID_FILE") > /dev/null 2>&1; then
             echo "✅ Bot iniciado correctamente (PID: $(cat $PID_FILE))"
             echo "📋 Log: tail -f $SCRIPT_DIR/bot.log"
-            echo "🖼️ Servidor de imágenes: http://localhost:8080/status"
+            echo "🖼️ Servidor de imágenes: http://192.168.1.61:8900/status"
         else
             echo "❌ Error iniciando el bot. Revisa el log:"
             echo "   tail -f $SCRIPT_DIR/bot.log"
@@ -103,9 +103,9 @@ case "$1" in
                 echo "📋 Log: tail -f $SCRIPT_DIR/bot.log"
                 
                 # Verificar servidor de imágenes
-                if curl -s http://localhost:8080/status > /dev/null 2>&1; then
+                if curl -s http://localhost:8900/status > /dev/null 2>&1; then
                     echo "🖼️ Servidor de imágenes: ✅ FUNCIONANDO"
-                    echo "   URL: http://localhost:8080/status"
+                    echo "   URL: http://localhost:8900/status"
                 else
                     echo "🖼️ Servidor de imágenes: ❌ NO RESPONDE"
                 fi
@@ -176,7 +176,7 @@ case "$1" in
         echo "  clean-images  - Limpiar imágenes antiguas manualmente"
         echo ""
         echo "Características:"
-        echo "  📸 Servidor de imágenes en puerto 8080"
+        echo "  📸 Servidor de imágenes en puerto 8900"
         echo "  🗑️ Limpieza automática cada 24 horas"
         echo "  🔗 URLs locales para imágenes privadas"
         echo "  📱 Soporte para imágenes desde Telegram"
