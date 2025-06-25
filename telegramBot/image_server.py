@@ -24,6 +24,15 @@ IMAGES_FOLDER = os.getenv('IMAGES_FOLDER', './images')
 app = Flask(__name__)
 
 # Configurar CORS para permitir acceso desde cualquier origen
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Headers adicionales para máxima compatibilidad
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -107,10 +116,14 @@ def serve_image(filename):
         response = send_file(
             file_path,
             as_attachment=False,
-            mimetype='image/jpeg'  # Asumiendo JPG, Flask puede detectar automáticamente
+            download_name=filename,
+            mimetype=None  # Deja que Flask detecte automáticamente el tipo
         )
         
-        # Agregar headers adicionales para imágenes
+        # Agregar headers adicionales para máxima compatibilidad
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = '*'
         response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
         
         return response
@@ -126,18 +139,42 @@ def server_status():
     try:
         # Contar imágenes actuales
         image_count = 0
+        images_list = []
         if os.path.exists(IMAGES_FOLDER):
-            image_count = len([f for f in os.listdir(IMAGES_FOLDER) 
-                             if os.path.isfile(os.path.join(IMAGES_FOLDER, f))])
+            for f in os.listdir(IMAGES_FOLDER):
+                if os.path.isfile(os.path.join(IMAGES_FOLDER, f)):
+                    image_count += 1
+                    images_list.append(f)
         
         return {
             'status': 'running',
             'timestamp': datetime.now().isoformat(),
             'images_count': image_count,
-            'images_folder': IMAGES_FOLDER
+            'images_folder': IMAGES_FOLDER,
+            'images_list': images_list[:5],  # Mostrar solo las primeras 5
+            'server_info': {
+                'host': IMAGE_SERVER_HOST,
+                'port': IMAGE_SERVER_PORT,
+                'cors_enabled': True
+            }
         }
     except Exception as e:
         return {'status': 'error', 'message': str(e)}, 500
+
+@app.route('/test')
+def test_endpoint():
+    """Endpoint simple para probar conectividad"""
+    return {
+        'message': 'Servidor de imágenes funcionando correctamente',
+        'timestamp': datetime.now().isoformat(),
+        'cors': 'enabled',
+        'access': 'public'
+    }
+
+@app.route('/ping')
+def ping():
+    """Endpoint de ping básico"""
+    return 'pong'
 
 def schedule_cleanup():
     """Programar la limpieza automática cada 24 horas"""
