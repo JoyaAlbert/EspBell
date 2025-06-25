@@ -1,12 +1,13 @@
 # Archivos de entorno
 .env
-
+images
 # Cache de Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
+bot.log
+bot.pid
 # Archivos de entorno virtual
 venv/
 env/
