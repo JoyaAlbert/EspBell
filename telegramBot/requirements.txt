@@ -2,4 +2,5 @@ requests
 python-dotenv
 paho-mqtt
 flask
+flask-cors
 schedule
