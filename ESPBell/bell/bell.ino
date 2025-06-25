@@ -64,22 +64,27 @@ void connectMQTT() {
   
   Serial.println("Intentando conectar al broker MQTT...");
   
-  // Intentar la conexión varias veces
+  // Intentar la conexión hasta que se conecte (sin límite de intentos)
   int attempts = 0;
   bool connected = false;
   
-  while (!connected && attempts < 5) {
+  while (!connected) {
+    attempts++;
+    
     // Conectar al servidor MQTT usando parámetros directamente
     if (mqttClient.connect(mqtt_server, mqtt_port, mqtt_client_id, NULL, NULL, NULL, NULL, 0, 0, false, true, &returnCode)) {
       connected = true;
       Serial.println("¡Conectado al broker MQTT!");
       
-      // Encender el LED para indicar que se ha conectado correctamente (invertimos la lógica)
+      // Suscribirse al topic para escuchar mensajes (opcional)
+      // mqttClient.subscribe(mqtt_topic);
+      
+      // Encender el LED para indicar que se ha conectado correctamente
       digitalWrite(ledPin, LOW); // LED encendido
       
       // Enviar mensaje de prueba
       if (mqttClient.publish(mqtt_topic, "ESP32 Timbre conectado", false)) {
-        Serial.println("Mensaje de prueba enviado al broker MQTT");
+        Serial.println("Mensaje de conexión enviado al broker MQTT");
         // Parpadear LED para confirmar envío del mensaje de prueba
         for (int i = 0; i < 3; i++) {
           digitalWrite(ledPin, HIGH);  // LED apagado
@@ -91,22 +96,21 @@ void connectMQTT() {
         Serial.println("Error al enviar mensaje de prueba");
       }
     } else {
-      attempts++;
       Serial.print("Error al conectar con el broker MQTT, código: ");
       Serial.print((int)returnCode);
       Serial.print(" - Intento ");
-      Serial.print(attempts);
-      Serial.println(" de 5");
+      Serial.println(attempts);
       
-      // Apagar el LED para indicar que hay un problema (invertimos la lógica)
+      // Apagar el LED para indicar que hay un problema
       digitalWrite(ledPin, HIGH); // LED apagado
       
-      delay(1000); // Esperar antes de reintentar
+      // Esperar más tiempo entre reintentos (backoff progresivo)
+      int delayTime = min(attempts * 2000, 10000); // Máximo 10 segundos
+      Serial.print("Esperando ");
+      Serial.print(delayTime / 1000);
+      Serial.println(" segundos antes del próximo intento...");
+      delay(delayTime);
     }
-  }
-  
-  if (!connected) {
-    Serial.println("No se pudo conectar al broker después de 5 intentos");
   }
 }
 
@@ -151,10 +155,16 @@ void loop() {
       delay(100);
       digitalWrite(ledPin, LOW);
     } else {
-      Serial.println("Error al enviar mensaje MQTT - intentando reconectar");
-      connectMQTT();
+      Serial.println("Error al enviar mensaje MQTT - reconectando...");
+      digitalWrite(ledPin, HIGH); // LED apagado
+      connectMQTT(); // Reconectar hasta que funcione
       // Intentar enviar nuevamente después de reconectar
-      mqttClient.publish(mqtt_topic, "RING", false);
+      if (mqttClient.publish(mqtt_topic, "RING", false)) {
+        Serial.println("Mensaje reenviado exitosamente");
+        digitalWrite(ledPin, LOW); // LED encendido
+      } else {
+        Serial.println("Error: No se pudo reenviar el mensaje");
+      }
     }
   }
   
@@ -165,18 +175,21 @@ void loop() {
     // Verificar la conexión WiFi
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("Conexión WiFi perdida. Reconectando...");
-      digitalWrite(ledPin, HIGH);
+      digitalWrite(ledPin, HIGH); // LED apagado
       setup_wifi();
       delay(2000);
-      connectMQTT();
+      connectMQTT(); // Reconectar MQTT después de WiFi
     } else {
-      // Verificar MQTT con un heartbeat
-      if (!mqttClient.publish("casa/heartbeat", "ok", false)) {
+      // Solo verificar si podemos publicar al topic (sin heartbeat)
+      Serial.println("WiFi conectado - Verificando conexión MQTT...");
+      
+      // Intentar publicar un mensaje silencioso para verificar la conexión
+      if (!mqttClient.publish(mqtt_topic, "", false)) {
         Serial.println("Conexión MQTT perdida. Reconectando...");
-        digitalWrite(ledPin, HIGH);
-        connectMQTT();
+        digitalWrite(ledPin, HIGH); // LED apagado
+        connectMQTT(); // Reconectar hasta que funcione
       } else {
-        Serial.println("Conexiones activas");
+        Serial.println("Conexiones WiFi y MQTT activas");
       }
     }
   }

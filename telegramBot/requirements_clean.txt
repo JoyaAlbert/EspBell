@@ -1,5 +1,0 @@
-requests
-python-dotenv
-paho-mqtt
-flask
-schedule
